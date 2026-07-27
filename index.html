@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLAMYBURN</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--r1:#ff0844;--r2:#ffb199;--bl:#0a0a0a;--wh:#fff}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bl);color:var(--wh);overflow-x:hidden}
+
+nav{position:fixed;top:0;left:0;width:100%;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(10,10,10,.85);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,8,68,.3);animation:fadeDown .6s ease}
+.logo{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--r1),#ff6a00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
+.nav-links{display:flex;gap:24px}
+.nav-links a{color:var(--wh);text-decoration:none;font-weight:700;font-size:.95rem;padding:8px 18px;border-radius:8px;transition:.3s}
+.nav-links a:hover{background:rgba(255,8,68,.2);color:var(--r1)}
+.nav-links a.active{background:var(--r1);color:#fff}
+
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px 80px;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,8,68,.12) 0%,transparent 60%);pointer-events:none}
+
+.fire-container{position:absolute;bottom:0;left:0;width:100%;height:300px;pointer-events:none;overflow:hidden}
+.flame{position:absolute;bottom:-40px;border-radius:50%;filter:blur(18px);animation:flame-rise linear infinite;opacity:.7}
+@keyframes flame-rise{
+  0%{transform:translateY(0) scale(1);opacity:.8}
+  50%{opacity:.5}
+  100%{transform:translateY(-350px) scale(.2);opacity:0}
+}
+
+.title{font-size:clamp(3rem,10vw,8rem);font-weight:900;line-height:1;letter-spacing:4px;background:linear-gradient(135deg,#fff 30%,var(--r1) 60%,#ff6a00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:titleIn .8s ease;position:relative;z-index:2}
+.subtitle{font-size:clamp(1rem,3vw,1.6rem);color:rgba(255,255,255,.7);margin-top:16px;animation:fadeUp .8s .2s ease both;position:relative;z-index:2}
+.cta{margin-top:36px;display:flex;gap:16px;animation:fadeUp .8s .4s ease both;position:relative;z-index:2}
+.btn{padding:14px 36px;border-radius:12px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:.3s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--r1),#ff6a00);color:#fff;box-shadow:0 4px 30px rgba(255,8,68,.4)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(255,8,68,.6)}
+.btn-outline{background:transparent;color:var(--wh);border:2px solid rgba(255,255,255,.25)}
+.btn-outline:hover{border-color:var(--r1);color:var(--r1)}
+
+section{padding:100px 40px;max-width:1100px;margin:0 auto}
+.section-title{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;text-align:center;margin-bottom:48px;background:linear-gradient(135deg,var(--wh),var(--r1));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.card{background:linear-gradient(145deg,rgba(255,8,68,.08),rgba(255,255,255,.03));border:1px solid rgba(255,8,68,.15);border-radius:20px;padding:36px 28px;transition:.4s;opacity:0;transform:translateY(40px)}
+.card.visible{opacity:1;transform:translateY(0)}
+.card:hover{transform:translateY(-6px);border-color:var(--r1);box-shadow:0 12px 40px rgba(255,8,68,.15)}
+.card-icon{font-size:2.8rem;margin-bottom:16px}
+.card h3{font-size:1.3rem;font-weight:900;margin-bottom:8px}
+.card p{color:rgba(255,255,255,.6);line-height:1.6}
+
+.youtube-section{text-align:center;position:relative}
+.youtube-section::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,8,68,.1),transparent 70%);border-radius:50%;pointer-events:none}
+.yt-card{display:inline-block;background:linear-gradient(145deg,rgba(255,0,0,.15),rgba(255,255,255,.03));border:1px solid rgba(255,0,0,.25);border-radius:24px;padding:48px 56px;transition:.4s;position:relative;z-index:1}
+.yt-card:hover{transform:scale(1.03);box-shadow:0 16px 60px rgba(255,0,0,.2)}
+.yt-icon{font-size:4rem;margin-bottom:20px;animation:pulse 2s ease-in-out infinite}
+.yt-card h3{font-size:1.8rem;font-weight:900;margin-bottom:8px}
+.yt-card p{color:rgba(255,255,255,.6);margin-bottom:24px;font-size:1.1rem}
+.yt-btn{display:inline-flex;align-items:center;gap:10px;padding:16px 40px;background:linear-gradient(135deg,#ff0000,#cc0000);color:#fff;font-weight:700;font-size:1.05rem;border-radius:14px;text-decoration:none;transition:.3s;box-shadow:0 4px 30px rgba(255,0,0,.3)}
+.yt-btn:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(255,0,0,.5)}
+
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+.particle{position:absolute;width:3px;height:3px;background:var(--r1);border-radius:50%;animation:float linear infinite}
+@keyframes float{
+  0%{transform:translateY(100vh) scale(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateY(-10vh) scale(1);opacity:0}
+}
+
+@keyframes titleIn{from{opacity:0;transform:scale(.8) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(255,8,68,.3)}50%{box-shadow:0 0 40px rgba(255,8,68,.6)}}
+
+.glow-line{width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--r1),transparent);margin:0 auto;animation:glow 3s ease-in-out infinite}
+
+footer{text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:.85rem;border-top:1px solid rgba(255,8,68,.1)}
+
+@media(max-width:640px){
+  nav{padding:14px 20px}
+  .nav-links{gap:12px}
+  .nav-links a{padding:6px 12px;font-size:.85rem}
+  section{padding:60px 20px}
+  .yt-card{padding:32px 24px}
+  .cta{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<nav>
+  <div class="logo">FLAMYBURN</div>
+  <div class="nav-links">
+    <a href="#" class="active">Главная</a>
+    <a href="LARPCRAFT.html">LARPCRAFT</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="fire-container" id="fireContainer"></div>
+  <h1 class="title">FLAMYBURN</h1>
+  <p class="subtitle">Контент, который горит ярче огня</p>
+  <div class="cta">
+    <a href="#about" class="btn btn-primary">Узнать больше</a>
+    <a href="https://www.youtube.com/@FlamyAdrian/" target="_blank" class="btn btn-outline">YouTube</a>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<section id="about">
+  <h2 class="section-title">Кто я?</h2>
+  <div class="cards">
+    <div class="card" data-anim>
+      <div class="card-icon">🎬</div>
+      <h3>Ютубер</h3>
+      <p>Создаю контент на YouTube. Видео, стримы, обзоры и многое другое — всё для тебя.</p>
+    </div>
+    <div class="card" data-anim>
+      <div class="card-icon">🔥</div>
+      <h3>FlamyAdrian</h3>
+      <p>Мой канал — это огонь: яркий, горячий и незабываемый. Подписывайся и не пропусти ни одного видео.</p>
+    </div>
+    <div class="card" data-anim>
+      <div class="card-icon">🎮</div>
+      <h3>LARPCRAFT</h3>
+      <p>Мой проект LARPCRAFT — уникальный контент, который стоит увидеть. Загляни на страницу проекта.</p>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<section class="youtube-section">
+  <h2 class="section-title">YouTube Канал</h2>
+  <div class="yt-card">
+    <div class="yt-icon">▶️</div>
+    <h3>FlamyAdrian</h3>
+    <p>Подпишись на мой канал, чтобы не пропустить новые видео</p>
+    <a href="https://www.youtube.com/@FlamyAdrian/" target="_blank" class="yt-btn">
+      <span>▶</span> Перейти на канал
+    </a>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 FLAMYBURN. Все права защищены.</p>
+</footer>
+
+<script>
+const fireContainer=document.getElementById('fireContainer');
+function createFlame(){
+  const f=document.createElement('div');
+  f.className='flame';
+  const size=Math.random()*40+20;
+  const colors=['#ff0844','#ff4500','#ff6a00','#ff8c00','#ffaa00'];
+  f.style.cssText=`
+    width:${size}px;height:${size}px;
+    left:${Math.random()*100}%;
+    background:radial-gradient(circle,${colors[Math.floor(Math.random()*colors.length)]},transparent);
+    animation-duration:${Math.random()*2+1.5}s;
+    animation-delay:${Math.random()*.5}s;
+  `;
+  fireContainer.appendChild(f);
+  setTimeout(()=>f.remove(),4000);
+}
+setInterval(createFlame,80);
+
+const pc=document.getElementById('particles');
+function createParticle(){
+  const p=document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`
+    left:${Math.random()*100}%;
+    animation-duration:${Math.random()*8+6}s;
+    animation-delay:${Math.random()*4}s;
+    width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;
+    opacity:${Math.random()*.5+.2};
+  `;
+  pc.appendChild(p);
+  setTimeout(()=>p.remove(),16000);
+}
+for(let i=0;i<30;i++)createParticle();
+setInterval(createParticle,500);
+
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+},{threshold:.15});
+document.querySelectorAll('[data-anim]').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

@@ -3801,6 +3801,7 @@ function serializeWorld(){
 }
 function saveWorld(meta, silent){
   if (!world||!player) return;
+  if(!meta||!meta.id) return; // multiplayer client - no local save
   const data=serializeWorld();
   const ok=Store.set(K_WORLD(meta.id), data);
   const list=worldList();
@@ -3912,7 +3913,7 @@ function setupInput(){
     }
   });
   document.addEventListener('pointerlockchange',()=>{
-    if (!isLocked() && inGame && !paused && !Gui.open && !chatOpen && !player.dead) togglePause();
+    if (!isLocked() && inGame && !paused && !Gui.open && !chatOpen && player && !player.dead) togglePause();
   });
   addEventListener('beforeunload',()=>{ if(inGame&&meta) saveWorld(meta,true); });
 }
@@ -5139,6 +5140,11 @@ function applyWorldData(data){
   const sp=data.spawn||{x:0,y:64,z:0};
   player = new Player(world, sp.x, sp.y, sp.z);
   player.mode=data.mode||'survival';
+  // Give starting items like normal game start
+  if(player.mode==='creative'){
+    player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1));
+    player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64));
+  }
   // Generate chunks around spawn
   const R=Math.min(S.renderDistance, 6);
   for(let dz=-R;dz<=R;dz++) for(let dx=-R;dx<=R;dx++){
@@ -5164,8 +5170,18 @@ function applyWorldData(data){
     ch.lit=true;
     ch.needMesh=true;
   }
-  // Mesh chunks
-  ChunkMgr.update(world, player.x, player.z, R, false);
+  // Mesh chunks (force all, no time budget)
+  for(const [,ch] of world.chunks){
+    if(ch.needMesh){
+      const n0=world.getChunk(ch.cx-1,ch.cz), n1=world.getChunk(ch.cx+1,ch.cz),
+            n2=world.getChunk(ch.cx,ch.cz-1), n3=world.getChunk(ch.cx,ch.cz+1);
+      if(n0&&n1&&n2&&n3){
+        ChunkMgr.mesh(world,ch);
+      }
+    }
+  }
+  // Also update streaming for remaining chunks
+  ChunkMgr.update(world, player.x, player.z, 200, false);
   // Enter game state
   loading=false; menuMode=false; inGame=true; paused=false;
   showScreen(null);
@@ -5277,7 +5293,7 @@ function spawnRemotePlayer(pid, nick){
   nameDiv.innerHTML='<span>'+nick+'</span>';
   document.body.appendChild(nameDiv);
   scene.add(group);
-  remotePlayers[pid]={group, nameDiv, hp:20, targetPos:new THREE.Vector3(), targetYaw:0, nick};
+  remotePlayers[pid]={group, nameDiv, hp:20, targetPos:new THREE.Vector3(), targetYaw:0, nick, legL, legR, armL, armR};
 }
 
 function updateRemotePlayer(pid, data){
@@ -5299,17 +5315,13 @@ function updateRemotePlayersVisual(dt){
     rp.group.rotation.y=rp.targetYaw;
     // walk animation
     const moved=rp.group.position.distanceTo(prev);
-    if(moved>0.001){
+    if(rp.legL && moved>0.001){
       const t=performance.now()*0.008;
       const swing=Math.sin(t*6)*0.5;
-      // swing legs
-      const legs=rp.group.children.filter((_,i)=>i>=5&&i<=6);
-      if(legs[0]) legs[0].rotation.x=swing;
-      if(legs[1]) legs[1].rotation.x=-swing;
-      // swing arms opposite
-      const arms=rp.group.children.filter((_,i)=>i>=3&&i<=4);
-      if(arms[0]) arms[0].rotation.x=-swing;
-      if(arms[1]) arms[1].rotation.x=swing;
+      rp.legL.rotation.x=swing;
+      rp.legR.rotation.x=-swing;
+      if(rp.armL) rp.armL.rotation.x=-swing;
+      if(rp.armR) rp.armR.rotation.x=swing;
     }
     // project name tag to screen (above head)
     const pos=rp.group.position.clone();

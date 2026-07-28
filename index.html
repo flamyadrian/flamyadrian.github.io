@@ -13,10 +13,10 @@ body{font-family:'Inter',sans-serif;background:var(--bl);color:var(--wh);overflo
 
 nav{position:fixed;top:0;left:0;width:100%;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(10,10,10,.85);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,8,68,.3);animation:fadeDown .6s ease}
 .logo{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--r1),#ff6a00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
-.nav-links{display:flex;gap:24px}
-.nav-links a{color:var(--wh);text-decoration:none;font-weight:700;font-size:.95rem;padding:8px 18px;border-radius:8px;transition:.3s}
-.nav-links a:hover{background:rgba(255,8,68,.2);color:var(--r1)}
-.nav-links a.active{background:var(--r1);color:#fff}
+.nav-links{display:flex;gap:14px}
+.nav-links a{color:var(--wh);text-decoration:none;font-weight:700;font-size:.9rem;padding:9px 22px;border-radius:10px;transition:.3s;background:linear-gradient(135deg,rgba(255,8,68,.15),rgba(255,106,0,.1));border:1px solid rgba(255,8,68,.2);box-shadow:0 2px 12px rgba(255,8,68,.1)}
+.nav-links a:hover{background:linear-gradient(135deg,rgba(255,8,68,.35),rgba(255,106,0,.25));border-color:rgba(255,8,68,.5);box-shadow:0 4px 20px rgba(255,8,68,.25);transform:translateY(-1px)}
+.nav-links a.active{background:linear-gradient(135deg,var(--r1),#ff6a00);color:#fff;border-color:transparent;box-shadow:0 4px 20px rgba(255,8,68,.4)}
 
 .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px 80px;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,8,68,.12) 0%,transparent 60%);pointer-events:none}

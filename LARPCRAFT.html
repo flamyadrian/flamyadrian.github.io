@@ -5048,8 +5048,8 @@ function handleClientMessage(data){
   switch(data.t){
     case 'welcome':
       MP.hostNick=data.hostNick||'Host';
-      player.mode=data.mode; refreshBars();
-      chat('[MP] '+t('mp.connected'));
+      if(player) player.mode=data.mode;
+      chat('[MP] '+t('mp.connected')+' — host: '+MP.hostNick);
       break;
     case 'nickList':
       // reserved for future use
@@ -5094,24 +5094,33 @@ function handleClientMessage(data){
 }
 
 function sendWorldToClient(conn){
-  if(!world||!player) return;
+  if(!world||!player){ chat('[MP] Cannot send world: no world loaded'); return; }
   const mods={};
   for(const [k,m] of world.modified){
     const a=[]; for(const [i,v] of m) a.push(i,v);
     if(a.length) mods[k]=a;
   }
+  // Only send chunks within 10 chunk radius of host player
+  const hostCX=Math.floor(player.x/CS);
+  const hostCZ=Math.floor(player.z/CS);
+  const R=10;
   const chunksData={};
+  let chunkCount=0;
   for(const [k,ch] of world.chunks){
-    if(ch.generated){
-      chunksData[k]={blocks:Array.from(ch.blocks), cx:ch.cx, cz:ch.cz};
+    if(ch.generated && Math.abs(ch.cx-hostCX)<=R && Math.abs(ch.cz-hostCZ)<=R){
+      // Send compressed: only block IDs as a compact array
+      chunksData[k]={b:Array.from(ch.blocks), cx:ch.cx, cz:ch.cz};
+      chunkCount++;
     }
   }
-  conn.send({
+  chat('[MP] Sending world to client ('+chunkCount+' chunks)...');
+  const msg={
     t:'worldData',
     seed:world.seed, time:Math.round(world.time), day:world.day,
     mode:player.mode, mods, chunks:chunksData,
     spawn:{x:player.x, y:player.y, z:player.z}
-  });
+  };
+  try{ conn.send(msg); chat('[MP] World sent!'); }catch(e){ chat('[MP] ERROR sending: '+e.message); }
 }
 
 function requestWorldFromHost(conn){
@@ -5119,7 +5128,8 @@ function requestWorldFromHost(conn){
 }
 
 function applyWorldData(data){
-  if(!data||!data.seed) return;
+  if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
+  try{
   // If no world running, create one from seed
   if(!world){
     world = new World(data.seed);
@@ -5135,7 +5145,7 @@ function applyWorldData(data){
     for(const k in data.chunks){
       const cd=data.chunks[k];
       const ch=new Chunk(cd.cx, cd.cz);
-      ch.blocks=new Uint8Array(cd.blocks);
+      ch.blocks=new Uint8Array(cd.b||cd.blocks);
       ch.generated=true;
       // Rebuild heightmap
       ch.minY=CH; ch.maxY=0;
@@ -5160,22 +5170,24 @@ function applyWorldData(data){
         world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
       }
     }
+    // Compute lighting for all chunks
+    for(const [,ch] of world.chunks){
+      world.computeLight(ch);
+      ch.lit=true;
+    }
     // Create player at spawn
     const sp=data.spawn||{x:0,y:64,z:0};
     player = new Player(world, sp.x, sp.y, sp.z);
     player.mode=data.mode||'survival';
-    // Light + mesh all chunks
-    for(const [,ch] of world.chunks){
-      world.computeLight(ch);
-      ch.lit=true; ch.needMesh=true;
-    }
+    // Mesh all chunks
+    for(const [,ch] of world.chunks) ch.needMesh=true;
     ChunkMgr.update(world, player.x, player.z, 9, false);
-    // Enter game
+    // Enter game state
     loading=false; menuMode=false; inGame=true; paused=false;
     showScreen(null);
     requestPointer();
     refreshBars(); refreshHotbar();
-    chat('[MP] '+t('mp.connected')+' — '+t('mp.waitingForWorld').replace('...',''));
+    chat('[MP] World loaded! Spawn at '+Math.round(sp.x)+' '+Math.round(sp.y)+' '+Math.round(sp.z));
   } else {
     // World exists, just apply mods
     for(const k in data.mods){
@@ -5188,6 +5200,7 @@ function applyWorldData(data){
       }
     }
   }
+  }catch(e){ chat('[MP] ERROR applying world: '+e.message); console.error('applyWorldData error:',e); }
 }
 
 function broadcast(data, excludePid){
@@ -5453,9 +5466,13 @@ async function mpJoinByCode(code){
   const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}});
   conn.on('open',()=>{
     MP.connected=true;
-    chat('[MP] '+t('mp.connected'));
+    chat('[MP] '+t('mp.connected')+' — requesting world...');
+    // Request world data from host
+    try{ conn.send({t:'requestWorld'}); }catch(e){}
   });
-  conn.on('data', data=>handleClientMessage(data));
+  conn.on('data', data=>{
+    handleClientMessage(data);
+  });
   conn.on('close',()=>{
     MP.connected=false;
     chat('[MP] '+t('mp.disconnected'));

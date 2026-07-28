@@ -3060,7 +3060,7 @@ function dropStack(world,x,y,z,st,eid){
     world.entities.push(e);
     if(MP.connected && !eid) {
        const msg = { t:'dropItem', x, y, z, id: st.id, count: st.count, eid: e.id };
-       if(MP.isHost) broadcast(msg); else { const h = MP.peers.get('host'); if(h) h.conn.send(msg); }
+       if(MP.isHost) broadcast(msg); else { const h = MP.peers.get('host'); if(h && h.conn && h.conn.open) h.conn.send(msg); }
     }
   }
 }
@@ -5094,19 +5094,11 @@ function applyWorldData(data){
     player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1));
     player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64));
   }
-
-  // Ensure HUD is built and visible (only build once)
-  if(!hudEl) buildHUD();
-  if(!ICONS.heartFull) buildIcons();
+  if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
   hudEl.classList.remove('hidden');
+  loading = false; inGame = true; showScreen(null); requestPointer();
   refreshBars(); refreshHotbar();
-
-  // Enter game
-  loading=false; menuMode=false; inGame=true; paused=false;
-  showScreen(null);
-  requestPointer();
-  chat('[MP] World loaded! Spawn at '+Math.round(sp.x)+' '+Math.round(sy)+' '+Math.round(sp.z));
-  }catch(e){ chat('[MP] ERROR: '+e.message); console.error('applyWorldData:',e); }
+  setTimeout(() => { chat('[MP] World Loaded! Ready!'); }, 100);
 }
 
 function broadcast(data, excludePid){

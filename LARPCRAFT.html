@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -196,7 +196,7 @@ window.addEventListener('unhandledrejection',function(ev){window.__err(ev.reason
 import * as THREE from 'three';
 
 /* =========================================================================
-   LARPCRAFT — single file voxel sandbox
+   LARPCRAFT вЂ” single file voxel sandbox
    ========================================================================= */
 
 const VERSION = '1.0.0';
@@ -204,185 +204,185 @@ const VERSION = '1.0.0';
 /* ------------------------------------------------------------------ *
  *  0. LOCALIZATION                                                     *
  * ------------------------------------------------------------------ */
-const LANGS = { en:'English (US)', ru:'Русский (Россия)' };
+const LANGS = { en:'English (US)', ru:'Р СѓСЃСЃРєРёР№ (Р РѕСЃСЃРёСЏ)' };
 
 const STR = {
-  'menu.singleplayer'      : ['Singleplayer','Одиночная игра'],
-  'menu.multiplayer'       : ['Multiplayer','Сетевая игра'],
-  'menu.options'           : ['Options...','Настройки...'],
-  'menu.quit'              : ['Quit Game','Выход'],
-  'menu.language'          : ['Language...','Язык...'],
-  'menu.disabled'          : ['Not available in this build','Недоступно в этой сборке'],
-  'menu.copyright'         : ['LARPCRAFT — not affiliated with Mojang','LARPCRAFT — не связан с Mojang'],
+  'menu.singleplayer'      : ['Singleplayer','РћРґРёРЅРѕС‡РЅР°СЏ РёРіСЂР°'],
+  'menu.multiplayer'       : ['Multiplayer','РЎРµС‚РµРІР°СЏ РёРіСЂР°'],
+  'menu.options'           : ['Options...','РќР°СЃС‚СЂРѕР№РєРё...'],
+  'menu.quit'              : ['Quit Game','Р’С‹С…РѕРґ'],
+  'menu.language'          : ['Language...','РЇР·С‹Рє...'],
+  'menu.disabled'          : ['Not available in this build','РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ СЌС‚РѕР№ СЃР±РѕСЂРєРµ'],
+  'menu.copyright'         : ['LARPCRAFT вЂ” not affiliated with Mojang','LARPCRAFT вЂ” РЅРµ СЃРІСЏР·Р°РЅ СЃ Mojang'],
 
-  'selectWorld.title'      : ['Select World','Выбор мира'],
-  'selectWorld.create'     : ['Create New World','Создать новый мир'],
-  'selectWorld.select'     : ['Play Selected World','Играть в выбранном мире'],
-  'selectWorld.delete'     : ['Delete','Удалить'],
-  'selectWorld.edit'       : ['Rename','Переименовать'],
-  'selectWorld.empty'      : ['No worlds yet. Create one!','Миров пока нет. Создайте новый!'],
-  'selectWorld.deleteQ'    : ['Delete world "%s" forever?','Удалить мир «%s» навсегда?'],
-  'selectWorld.export'     : ['Export','Экспорт'],
-  'selectWorld.import'     : ['Import','Импорт'],
+  'selectWorld.title'      : ['Select World','Р’С‹Р±РѕСЂ РјРёСЂР°'],
+  'selectWorld.create'     : ['Create New World','РЎРѕР·РґР°С‚СЊ РЅРѕРІС‹Р№ РјРёСЂ'],
+  'selectWorld.select'     : ['Play Selected World','РРіСЂР°С‚СЊ РІ РІС‹Р±СЂР°РЅРЅРѕРј РјРёСЂРµ'],
+  'selectWorld.delete'     : ['Delete','РЈРґР°Р»РёС‚СЊ'],
+  'selectWorld.edit'       : ['Rename','РџРµСЂРµРёРјРµРЅРѕРІР°С‚СЊ'],
+  'selectWorld.empty'      : ['No worlds yet. Create one!','РњРёСЂРѕРІ РїРѕРєР° РЅРµС‚. РЎРѕР·РґР°Р№С‚Рµ РЅРѕРІС‹Р№!'],
+  'selectWorld.deleteQ'    : ['Delete world "%s" forever?','РЈРґР°Р»РёС‚СЊ РјРёСЂ В«%sВ» РЅР°РІСЃРµРіРґР°?'],
+  'selectWorld.export'     : ['Export','Р­РєСЃРїРѕСЂС‚'],
+  'selectWorld.import'     : ['Import','РРјРїРѕСЂС‚'],
 
-  'createWorld.title'      : ['Create New World','Создание нового мира'],
-  'createWorld.name'       : ['World Name','Название мира'],
-  'createWorld.seed'       : ['Seed for the world generator','Сид для генератора мира'],
-  'createWorld.seedHint'   : ['Leave blank for a random seed','Оставьте пустым для случайного сида'],
-  'createWorld.mode'       : ['Game Mode','Режим игры'],
-  'createWorld.create'     : ['Create New World','Создать новый мир'],
-  'createWorld.defName'    : ['New World','Новый мир'],
+  'createWorld.title'      : ['Create New World','РЎРѕР·РґР°РЅРёРµ РЅРѕРІРѕРіРѕ РјРёСЂР°'],
+  'createWorld.name'       : ['World Name','РќР°Р·РІР°РЅРёРµ РјРёСЂР°'],
+  'createWorld.seed'       : ['Seed for the world generator','РЎРёРґ РґР»СЏ РіРµРЅРµСЂР°С‚РѕСЂР° РјРёСЂР°'],
+  'createWorld.seedHint'   : ['Leave blank for a random seed','РћСЃС‚Р°РІСЊС‚Рµ РїСѓСЃС‚С‹Рј РґР»СЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ СЃРёРґР°'],
+  'createWorld.mode'       : ['Game Mode','Р РµР¶РёРј РёРіСЂС‹'],
+  'createWorld.create'     : ['Create New World','РЎРѕР·РґР°С‚СЊ РЅРѕРІС‹Р№ РјРёСЂ'],
+  'createWorld.defName'    : ['New World','РќРѕРІС‹Р№ РјРёСЂ'],
 
-  'gameMode.survival'      : ['Survival','Выживание'],
-  'gameMode.creative'      : ['Creative','Творческий'],
-  'gameMode.survivalDesc'  : ['Search for resources, craft, gain levels, health and hunger','Поиск ресурсов, крафт, здоровье и голод'],
-  'gameMode.creativeDesc'  : ['Unlimited resources, free flying and instant block breaking','Бесконечные ресурсы, полёт и мгновенное разрушение блоков'],
+  'gameMode.survival'      : ['Survival','Р’С‹Р¶РёРІР°РЅРёРµ'],
+  'gameMode.creative'      : ['Creative','РўРІРѕСЂС‡РµСЃРєРёР№'],
+  'gameMode.survivalDesc'  : ['Search for resources, craft, gain levels, health and hunger','РџРѕРёСЃРє СЂРµСЃСѓСЂСЃРѕРІ, РєСЂР°С„С‚, Р·РґРѕСЂРѕРІСЊРµ Рё РіРѕР»РѕРґ'],
+  'gameMode.creativeDesc'  : ['Unlimited resources, free flying and instant block breaking','Р‘РµСЃРєРѕРЅРµС‡РЅС‹Рµ СЂРµСЃСѓСЂСЃС‹, РїРѕР»С‘С‚ Рё РјРіРЅРѕРІРµРЅРЅРѕРµ СЂР°Р·СЂСѓС€РµРЅРёРµ Р±Р»РѕРєРѕРІ'],
 
-  'options.title'          : ['Options','Настройки'],
-  'options.video'          : ['Video Settings...','Настройки графики...'],
-  'options.controls'       : ['Controls...','Управление...'],
-  'options.sensitivity'    : ['Sensitivity','Чувствительность'],
-  'options.fov'            : ['FOV','Обзор'],
-  'options.fovNormal'      : ['Normal','Норм.'],
-  'options.renderDistance' : ['Render Distance','Дальность прорисовки'],
-  'options.chunks'         : ['%s chunks','%s чанк.'],
-  'options.graphics'       : ['Graphics','Графика'],
-  'options.gfxFast'        : ['Fast','Быстро'],
-  'options.gfxFancy'       : ['Fancy','Красиво'],
-  'options.gfxUltra'       : ['Ultra','Ультра'],
-  'options.shadows'        : ['Shadows','Тени'],
-  'options.shadowQ'        : ['Shadow Quality','Качество теней'],
-  'options.ssao'           : ['Ambient Occlusion (SSAO)','Затенение (SSAO)'],
-  'options.bloom'          : ['Bloom','Свечение'],
-  'options.godrays'        : ['Volumetric Light','Объёмный свет'],
-  'options.water'          : ['Water Reflections','Отражения воды'],
-  'options.fxaa'           : ['Antialiasing (FXAA)','Сглаживание (FXAA)'],
-  'options.smoothLight'    : ['Smooth Lighting','Плавное освещение'],
-  'options.clouds'         : ['Clouds','Облака'],
-  'options.vsync'          : ['Max Framerate','Макс. частота кадров'],
-  'options.sound'          : ['Sound','Звук'],
-  'options.music'          : ['Music','Музыка'],
-  'options.invertY'        : ['Invert Mouse','Инверт. мышь'],
-  'options.autoJump'       : ['Auto-Jump','Автопрыжок'],
-  'options.on'             : ['ON','ВКЛ'],
-  'options.off'            : ['OFF','ВЫКЛ'],
-  'options.unlimited'      : ['Unlimited','Без ограничений'],
-  'options.language'       : ['Language','Язык'],
+  'options.title'          : ['Options','РќР°СЃС‚СЂРѕР№РєРё'],
+  'options.video'          : ['Video Settings...','РќР°СЃС‚СЂРѕР№РєРё РіСЂР°С„РёРєРё...'],
+  'options.controls'       : ['Controls...','РЈРїСЂР°РІР»РµРЅРёРµ...'],
+  'options.sensitivity'    : ['Sensitivity','Р§СѓРІСЃС‚РІРёС‚РµР»СЊРЅРѕСЃС‚СЊ'],
+  'options.fov'            : ['FOV','РћР±Р·РѕСЂ'],
+  'options.fovNormal'      : ['Normal','РќРѕСЂРј.'],
+  'options.renderDistance' : ['Render Distance','Р”Р°Р»СЊРЅРѕСЃС‚СЊ РїСЂРѕСЂРёСЃРѕРІРєРё'],
+  'options.chunks'         : ['%s chunks','%s С‡Р°РЅРє.'],
+  'options.graphics'       : ['Graphics','Р“СЂР°С„РёРєР°'],
+  'options.gfxFast'        : ['Fast','Р‘С‹СЃС‚СЂРѕ'],
+  'options.gfxFancy'       : ['Fancy','РљСЂР°СЃРёРІРѕ'],
+  'options.gfxUltra'       : ['Ultra','РЈР»СЊС‚СЂР°'],
+  'options.shadows'        : ['Shadows','РўРµРЅРё'],
+  'options.shadowQ'        : ['Shadow Quality','РљР°С‡РµСЃС‚РІРѕ С‚РµРЅРµР№'],
+  'options.ssao'           : ['Ambient Occlusion (SSAO)','Р—Р°С‚РµРЅРµРЅРёРµ (SSAO)'],
+  'options.bloom'          : ['Bloom','РЎРІРµС‡РµРЅРёРµ'],
+  'options.godrays'        : ['Volumetric Light','РћР±СЉС‘РјРЅС‹Р№ СЃРІРµС‚'],
+  'options.water'          : ['Water Reflections','РћС‚СЂР°Р¶РµРЅРёСЏ РІРѕРґС‹'],
+  'options.fxaa'           : ['Antialiasing (FXAA)','РЎРіР»Р°Р¶РёРІР°РЅРёРµ (FXAA)'],
+  'options.smoothLight'    : ['Smooth Lighting','РџР»Р°РІРЅРѕРµ РѕСЃРІРµС‰РµРЅРёРµ'],
+  'options.clouds'         : ['Clouds','РћР±Р»Р°РєР°'],
+  'options.vsync'          : ['Max Framerate','РњР°РєСЃ. С‡Р°СЃС‚РѕС‚Р° РєР°РґСЂРѕРІ'],
+  'options.sound'          : ['Sound','Р—РІСѓРє'],
+  'options.music'          : ['Music','РњСѓР·С‹РєР°'],
+  'options.invertY'        : ['Invert Mouse','РРЅРІРµСЂС‚. РјС‹С€СЊ'],
+  'options.autoJump'       : ['Auto-Jump','РђРІС‚РѕРїСЂС‹Р¶РѕРє'],
+  'options.on'             : ['ON','Р’РљР›'],
+  'options.off'            : ['OFF','Р’Р«РљР›'],
+  'options.unlimited'      : ['Unlimited','Р‘РµР· РѕРіСЂР°РЅРёС‡РµРЅРёР№'],
+  'options.language'       : ['Language','РЇР·С‹Рє'],
 
-  'gui.done'               : ['Done','Готово'],
-  'gui.back'               : ['Back','Назад'],
-  'gui.cancel'             : ['Cancel','Отмена'],
-  'gui.yes'                : ['Yes','Да'],
-  'gui.no'                 : ['No','Нет'],
-  'gui.toTitle'            : ['Title Screen','Выйти в главное меню'],
+  'gui.done'               : ['Done','Р“РѕС‚РѕРІРѕ'],
+  'gui.back'               : ['Back','РќР°Р·Р°Рґ'],
+  'gui.cancel'             : ['Cancel','РћС‚РјРµРЅР°'],
+  'gui.yes'                : ['Yes','Р”Р°'],
+  'gui.no'                 : ['No','РќРµС‚'],
+  'gui.toTitle'            : ['Title Screen','Р’С‹Р№С‚Рё РІ РіР»Р°РІРЅРѕРµ РјРµРЅСЋ'],
 
-  'menu.game'              : ['Game Menu','Меню игры'],
-  'menu.returnToGame'      : ['Back to Game','Вернуться к игре'],
-  'menu.returnToMenu'      : ['Save and Quit to Title','Сохранить и выйти'],
-  'menu.paused'            : ['Game paused','Игра приостановлена'],
+  'menu.game'              : ['Game Menu','РњРµРЅСЋ РёРіСЂС‹'],
+  'menu.returnToGame'      : ['Back to Game','Р’РµСЂРЅСѓС‚СЊСЃСЏ Рє РёРіСЂРµ'],
+  'menu.returnToMenu'      : ['Save and Quit to Title','РЎРѕС…СЂР°РЅРёС‚СЊ Рё РІС‹Р№С‚Рё'],
+  'menu.paused'            : ['Game paused','РРіСЂР° РїСЂРёРѕСЃС‚Р°РЅРѕРІР»РµРЅР°'],
 
-  'death.title'            : ['You Died!','Вы умерли!'],
-  'death.respawn'          : ['Respawn','Возродиться'],
-  'death.score'            : ['Score: %s','Очки: %s'],
+  'death.title'            : ['You Died!','Р’С‹ СѓРјРµСЂР»Рё!'],
+  'death.respawn'          : ['Respawn','Р’РѕР·СЂРѕРґРёС‚СЊСЃСЏ'],
+  'death.score'            : ['Score: %s','РћС‡РєРё: %s'],
 
-  'container.inventory'    : ['Inventory','Инвентарь'],
-  'container.crafting'     : ['Crafting','Крафт'],
-  'container.craftingTable': ['Crafting','Верстак'],
-  'container.furnace'      : ['Furnace','Печь'],
-  'container.chest'        : ['Chest','Сундук'],
-  'container.creative'     : ['Creative Inventory','Творческий инвентарь'],
+  'container.inventory'    : ['Inventory','РРЅРІРµРЅС‚Р°СЂСЊ'],
+  'container.crafting'     : ['Crafting','РљСЂР°С„С‚'],
+  'container.craftingTable': ['Crafting','Р’РµСЂСЃС‚Р°Рє'],
+  'container.furnace'      : ['Furnace','РџРµС‡СЊ'],
+  'container.chest'        : ['Chest','РЎСѓРЅРґСѓРє'],
+  'container.creative'     : ['Creative Inventory','РўРІРѕСЂС‡РµСЃРєРёР№ РёРЅРІРµРЅС‚Р°СЂСЊ'],
 
-  'load.generating'        : ['Generating world','Создание мира'],
-  'load.building'          : ['Building terrain','Построение рельефа'],
-  'load.loading'           : ['Loading world','Загрузка мира'],
-  'load.saving'            : ['Saving world','Сохранение мира'],
-  'load.saved'             : ['World saved','Мир сохранён'],
+  'load.generating'        : ['Generating world','РЎРѕР·РґР°РЅРёРµ РјРёСЂР°'],
+  'load.building'          : ['Building terrain','РџРѕСЃС‚СЂРѕРµРЅРёРµ СЂРµР»СЊРµС„Р°'],
+  'load.loading'           : ['Loading world','Р—Р°РіСЂСѓР·РєР° РјРёСЂР°'],
+  'load.saving'            : ['Saving world','РЎРѕС…СЂР°РЅРµРЅРёРµ РјРёСЂР°'],
+  'load.saved'             : ['World saved','РњРёСЂ СЃРѕС…СЂР°РЅС‘РЅ'],
 
-  'chat.seed'              : ['Seed: %s','Сид: %s'],
-  'chat.gamemode'          : ['Your game mode has been updated to %s','Ваш режим игры изменён на «%s»'],
-  'chat.time'              : ['Set the time to %s','Время установлено на %s'],
-  'chat.give'              : ['Given %s x%s','Выдано: %s x%s'],
-  'chat.unknown'           : ['Unknown command','Неизвестная команда'],
-  'chat.help'              : ['Commands: /help /seed /gamemode /time /give /tp /kill /clear','Команды: /help /seed /gamemode /time /give /tp /kill /clear'],
-  'chat.tp'                : ['Teleported to %s','Телепортация в %s'],
-  'chat.cleared'           : ['Inventory cleared','Инвентарь очищен'],
-  'chat.saved'             : ['Saved.','Сохранено.'],
+  'chat.seed'              : ['Seed: %s','РЎРёРґ: %s'],
+  'chat.gamemode'          : ['Your game mode has been updated to %s','Р’Р°С€ СЂРµР¶РёРј РёРіСЂС‹ РёР·РјРµРЅС‘РЅ РЅР° В«%sВ»'],
+  'chat.time'              : ['Set the time to %s','Р’СЂРµРјСЏ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РЅР° %s'],
+  'chat.give'              : ['Given %s x%s','Р’С‹РґР°РЅРѕ: %s x%s'],
+  'chat.unknown'           : ['Unknown command','РќРµРёР·РІРµСЃС‚РЅР°СЏ РєРѕРјР°РЅРґР°'],
+  'chat.help'              : ['Commands: /help /seed /gamemode /time /give /tp /kill /clear','РљРѕРјР°РЅРґС‹: /help /seed /gamemode /time /give /tp /kill /clear'],
+  'chat.tp'                : ['Teleported to %s','РўРµР»РµРїРѕСЂС‚Р°С†РёСЏ РІ %s'],
+  'chat.cleared'           : ['Inventory cleared','РРЅРІРµРЅС‚Р°СЂСЊ РѕС‡РёС‰РµРЅ'],
+  'chat.saved'             : ['Saved.','РЎРѕС…СЂР°РЅРµРЅРѕ.'],
 
-  'keys.title'             : ['Controls','Управление'],
-  'keys.move'              : ['Move','Движение'],
-  'keys.jump'              : ['Jump','Прыжок'],
-  'keys.sneak'             : ['Sneak','Красться'],
-  'keys.sprint'            : ['Sprint','Бежать'],
-  'keys.inventory'         : ['Inventory','Инвентарь'],
-  'keys.drop'              : ['Drop Item','Выбросить предмет'],
-  'keys.attack'            : ['Attack / Break Block','Атака / Разрушить блок'],
-  'keys.use'               : ['Use Item / Place Block','Использовать / Поставить блок'],
-  'keys.pick'              : ['Pick Block','Выбрать блок'],
-  'keys.chat'              : ['Open Chat','Открыть чат'],
-  'keys.debug'             : ['Debug Screen','Отладочный экран'],
-  'keys.fly'               : ['Fly (creative): double tap','Полёт (творческий): двойное нажатие'],
-  'keys.hotbar'            : ['Hotbar Slot','Слот быстрого доступа'],
-  'keys.pause'             : ['Pause','Пауза'],
+  'keys.title'             : ['Controls','РЈРїСЂР°РІР»РµРЅРёРµ'],
+  'keys.move'              : ['Move','Р”РІРёР¶РµРЅРёРµ'],
+  'keys.jump'              : ['Jump','РџСЂС‹Р¶РѕРє'],
+  'keys.sneak'             : ['Sneak','РљСЂР°СЃС‚СЊСЃСЏ'],
+  'keys.sprint'            : ['Sprint','Р‘РµР¶Р°С‚СЊ'],
+  'keys.inventory'         : ['Inventory','РРЅРІРµРЅС‚Р°СЂСЊ'],
+  'keys.drop'              : ['Drop Item','Р’С‹Р±СЂРѕСЃРёС‚СЊ РїСЂРµРґРјРµС‚'],
+  'keys.attack'            : ['Attack / Break Block','РђС‚Р°РєР° / Р Р°Р·СЂСѓС€РёС‚СЊ Р±Р»РѕРє'],
+  'keys.use'               : ['Use Item / Place Block','РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ / РџРѕСЃС‚Р°РІРёС‚СЊ Р±Р»РѕРє'],
+  'keys.pick'              : ['Pick Block','Р’С‹Р±СЂР°С‚СЊ Р±Р»РѕРє'],
+  'keys.chat'              : ['Open Chat','РћС‚РєСЂС‹С‚СЊ С‡Р°С‚'],
+  'keys.debug'             : ['Debug Screen','РћС‚Р»Р°РґРѕС‡РЅС‹Р№ СЌРєСЂР°РЅ'],
+  'keys.fly'               : ['Fly (creative): double tap','РџРѕР»С‘С‚ (С‚РІРѕСЂС‡РµСЃРєРёР№): РґРІРѕР№РЅРѕРµ РЅР°Р¶Р°С‚РёРµ'],
+  'keys.hotbar'            : ['Hotbar Slot','РЎР»РѕС‚ Р±С‹СЃС‚СЂРѕРіРѕ РґРѕСЃС‚СѓРїР°'],
+  'keys.pause'             : ['Pause','РџР°СѓР·Р°'],
 
-  'hud.fps'                : ['FPS','Кадр/с'],
-  'hud.chunks'             : ['Chunks','Чанки'],
-  'hud.biome'              : ['Biome','Биом'],
-  'hud.pos'                : ['Position','Позиция'],
-  'hud.light'              : ['Light','Свет'],
-  'hud.time'               : ['Time','Время'],
-  'hud.entities'           : ['Entities','Существа'],
+  'hud.fps'                : ['FPS','РљР°РґСЂ/СЃ'],
+  'hud.chunks'             : ['Chunks','Р§Р°РЅРєРё'],
+  'hud.biome'              : ['Biome','Р‘РёРѕРј'],
+  'hud.pos'                : ['Position','РџРѕР·РёС†РёСЏ'],
+  'hud.light'              : ['Light','РЎРІРµС‚'],
+  'hud.time'               : ['Time','Р’СЂРµРјСЏ'],
+  'hud.entities'           : ['Entities','РЎСѓС‰РµСЃС‚РІР°'],
 
-  'biome.ocean'            : ['Ocean','Океан'],
-  'biome.beach'            : ['Beach','Пляж'],
-  'biome.plains'           : ['Plains','Равнина'],
-  'biome.forest'           : ['Forest','Лес'],
-  'biome.desert'           : ['Desert','Пустыня'],
-  'biome.mountains'        : ['Extreme Hills','Экстремальные холмы'],
-  'biome.tundra'           : ['Ice Plains','Ледяная равнина'],
-  'biome.swamp'            : ['Swampland','Болото'],
+  'biome.ocean'            : ['Ocean','РћРєРµР°РЅ'],
+  'biome.beach'            : ['Beach','РџР»СЏР¶'],
+  'biome.plains'           : ['Plains','Р Р°РІРЅРёРЅР°'],
+  'biome.forest'           : ['Forest','Р›РµСЃ'],
+  'biome.desert'           : ['Desert','РџСѓСЃС‚С‹РЅСЏ'],
+  'biome.mountains'        : ['Extreme Hills','Р­РєСЃС‚СЂРµРјР°Р»СЊРЅС‹Рµ С…РѕР»РјС‹'],
+  'biome.tundra'           : ['Ice Plains','Р›РµРґСЏРЅР°СЏ СЂР°РІРЅРёРЅР°'],
+  'biome.swamp'            : ['Swampland','Р‘РѕР»РѕС‚Рѕ'],
 
-  'msg.noRoom'             : ['Inventory full','Инвентарь полон'],
-  'msg.autosave'           : ['Autosaved','Автосохранение'],
-  'msg.webglFail'          : ['WebGL 2 is not available in this browser.','WebGL 2 недоступен в этом браузере.'],
-  'msg.day'                : ['Day %s','День %s'],
+  'msg.noRoom'             : ['Inventory full','РРЅРІРµРЅС‚Р°СЂСЊ РїРѕР»РѕРЅ'],
+  'msg.autosave'           : ['Autosaved','РђРІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ'],
+  'msg.webglFail'          : ['WebGL 2 is not available in this browser.','WebGL 2 РЅРµРґРѕСЃС‚СѓРїРµРЅ РІ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ.'],
+  'msg.day'                : ['Day %s','Р”РµРЅСЊ %s'],
 
-  'mp.title'               : ['Multiplayer','Сетевая игра'],
-  'mp.host'                : ['Host Server','Создать сервер'],
-  'mp.join'                : ['Join Server','Подключиться'],
-  'mp.enable'              : ['Enable Multiplayer','Включить мультиплеер'],
-  'mp.disable'             : ['Disable Multiplayer','Выключить мультиплеер'],
-  'mp.code'                : ['Server Code','Код сервера'],
-  'mp.codeHint'            : ['Enter code (XX0X0X)','Введите код (XX0X0X)'],
-  'mp.connect'             : ['Connect','Подключиться'],
-  'mp.disconnect'          : ['Disconnect','Отключиться'],
-  'mp.players'             : ['Players','Игроки'],
-  'mp.youAreHost'          : ['You are the host','Вы — создатель сервера'],
-  'mp.connected'           : ['Connected!','Подключено!'],
-  'mp.disconnected'        : ['Disconnected','Отключено'],
-  'mp.playerJoined'        : ['%s joined the server','%s зашёл на сервер'],
-  'mp.playerLeft'          : ['%s left the server','%s вышел с сервера'],
-  'mp.name'                : ['Nickname','Никнейм'],
-  'mp.nameHint'            : ['Letters and digits, 3-16 chars','Буквы и цифры, 3-16 символов'],
-  'mp.nameTaken'           : ['Name already taken!','Ник уже занят!'],
-  'mp.nameInvalid'         : ['Invalid name!','Некорректный ник!'],
-  'mp.creative'            : ['Creative Mode','Творческий режим'],
-  'mp.survival'            : ['Survival Mode','Режим выживания'],
-  'mp.gmChanged'           : ['%s switched to %s','%s переключился на %s'],
-  'mp.hostOnly'            : ['Only the host can use commands','Только создатель может использовать команды'],
-  'mp.waitingForWorld'     : ['Waiting for world data...','Ожидание данных мира...'],
-  'mp.copyCode'            : ['Copy Code','Скопировать код'],
-  'mp.copied'              : ['Copied!','Скопировано!'],
-  'mp.saveNick'            : ['Save Nick','Сохранить ник'],
-  'mp.nickSaved'           : ['Nick saved!','Ник сохранён!'],
+  'mp.title'               : ['Multiplayer','РЎРµС‚РµРІР°СЏ РёРіСЂР°'],
+  'mp.host'                : ['Host Server','РЎРѕР·РґР°С‚СЊ СЃРµСЂРІРµСЂ'],
+  'mp.join'                : ['Join Server','РџРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ'],
+  'mp.enable'              : ['Enable Multiplayer','Р’РєР»СЋС‡РёС‚СЊ РјСѓР»СЊС‚РёРїР»РµРµСЂ'],
+  'mp.disable'             : ['Disable Multiplayer','Р’С‹РєР»СЋС‡РёС‚СЊ РјСѓР»СЊС‚РёРїР»РµРµСЂ'],
+  'mp.code'                : ['Server Code','РљРѕРґ СЃРµСЂРІРµСЂР°'],
+  'mp.codeHint'            : ['Enter code (XX0X0X)','Р’РІРµРґРёС‚Рµ РєРѕРґ (XX0X0X)'],
+  'mp.connect'             : ['Connect','РџРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ'],
+  'mp.disconnect'          : ['Disconnect','РћС‚РєР»СЋС‡РёС‚СЊСЃСЏ'],
+  'mp.players'             : ['Players','РРіСЂРѕРєРё'],
+  'mp.youAreHost'          : ['You are the host','Р’С‹ вЂ” СЃРѕР·РґР°С‚РµР»СЊ СЃРµСЂРІРµСЂР°'],
+  'mp.connected'           : ['Connected!','РџРѕРґРєР»СЋС‡РµРЅРѕ!'],
+  'mp.disconnected'        : ['Disconnected','РћС‚РєР»СЋС‡РµРЅРѕ'],
+  'mp.playerJoined'        : ['%s joined the server','%s Р·Р°С€С‘Р» РЅР° СЃРµСЂРІРµСЂ'],
+  'mp.playerLeft'          : ['%s left the server','%s РІС‹С€РµР» СЃ СЃРµСЂРІРµСЂР°'],
+  'mp.name'                : ['Nickname','РќРёРєРЅРµР№Рј'],
+  'mp.nameHint'            : ['Letters and digits, 3-16 chars','Р‘СѓРєРІС‹ Рё С†РёС„СЂС‹, 3-16 СЃРёРјРІРѕР»РѕРІ'],
+  'mp.nameTaken'           : ['Name already taken!','РќРёРє СѓР¶Рµ Р·Р°РЅСЏС‚!'],
+  'mp.nameInvalid'         : ['Invalid name!','РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ РЅРёРє!'],
+  'mp.creative'            : ['Creative Mode','РўРІРѕСЂС‡РµСЃРєРёР№ СЂРµР¶РёРј'],
+  'mp.survival'            : ['Survival Mode','Р РµР¶РёРј РІС‹Р¶РёРІР°РЅРёСЏ'],
+  'mp.gmChanged'           : ['%s switched to %s','%s РїРµСЂРµРєР»СЋС‡РёР»СЃСЏ РЅР° %s'],
+  'mp.hostOnly'            : ['Only the host can use commands','РўРѕР»СЊРєРѕ СЃРѕР·РґР°С‚РµР»СЊ РјРѕР¶РµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РєРѕРјР°РЅРґС‹'],
+  'mp.waitingForWorld'     : ['Waiting for world data...','РћР¶РёРґР°РЅРёРµ РґР°РЅРЅС‹С… РјРёСЂР°...'],
+  'mp.copyCode'            : ['Copy Code','РЎРєРѕРїРёСЂРѕРІР°С‚СЊ РєРѕРґ'],
+  'mp.copied'              : ['Copied!','РЎРєРѕРїРёСЂРѕРІР°РЅРѕ!'],
+  'mp.saveNick'            : ['Save Nick','РЎРѕС…СЂР°РЅРёС‚СЊ РЅРёРє'],
+  'mp.nickSaved'           : ['Nick saved!','РќРёРє СЃРѕС…СЂР°РЅС‘РЅ!'],
 };
 
 const SPLASHES = {
   en:['100% shaders!','Volumetric!','Now with mobs!','Voxels everywhere!','Dig deeper!',
       'Creeper? Aww man','Made in one file!','Cast those shadows!','Seed it!','Crafting time!',
       'LARP responsibly','Water you doing?','Ambient occluded!','Also try Survival!'],
-  ru:['100% шейдеров!','Объёмный свет!','Теперь с мобами!','Воксели повсюду!','Копай глубже!',
-      'Крипер? Ох, блин','Сделано одним файлом!','Отбрось тень!','Введи сид!','Пора крафтить!',
-      'ЛАРПь ответственно','Вода — мокрая!','Затенено по кругу!','Попробуй выживание!']
+  ru:['100% С€РµР№РґРµСЂРѕРІ!','РћР±СЉС‘РјРЅС‹Р№ СЃРІРµС‚!','РўРµРїРµСЂСЊ СЃ РјРѕР±Р°РјРё!','Р’РѕРєСЃРµР»Рё РїРѕРІСЃСЋРґСѓ!','РљРѕРїР°Р№ РіР»СѓР±Р¶Рµ!',
+      'РљСЂРёРїРµСЂ? РћС…, Р±Р»РёРЅ','РЎРґРµР»Р°РЅРѕ РѕРґРЅРёРј С„Р°Р№Р»РѕРј!','РћС‚Р±СЂРѕСЃСЊ С‚РµРЅСЊ!','Р’РІРµРґРё СЃРёРґ!','РџРѕСЂР° РєСЂР°С„С‚РёС‚СЊ!',
+      'Р›РђР РџСЊ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕ','Р’РѕРґР° вЂ” РјРѕРєСЂР°СЏ!','Р—Р°С‚РµРЅРµРЅРѕ РїРѕ РєСЂСѓРіСѓ!','РџРѕРїСЂРѕР±СѓР№ РІС‹Р¶РёРІР°РЅРёРµ!']
 };
 
 let LANG = 'en';
@@ -851,48 +851,48 @@ function B(id,key,en,ru,tx,o){
   BLOCKS[id]=d; BLOCK_BY_KEY[key]=d; return d;
 }
 const AIR=0;
-B(0,'air','Air','Воздух',{all:0},{solid:false,opaque:false,render:'none',replaceable:true,drop:0});
-B(1,'stone','Stone','Камень',{all:TEX.stone},{hardness:1.5,tool:'pickaxe',level:0,drop:4});
-B(2,'grass_block','Grass Block','Травяной блок',{top:TEX.grass_top,side:TEX.grass_side,bottom:TEX.dirt},{hardness:0.6,tool:'shovel',drop:3,tint:'grass'});
-B(3,'dirt','Dirt','Земля',{all:TEX.dirt},{hardness:0.5,tool:'shovel'});
-B(4,'cobblestone','Cobblestone','Булыжник',{all:TEX.cobblestone},{hardness:2,tool:'pickaxe'});
-B(5,'planks','Oak Planks','Дубовые доски',{all:TEX.planks},{hardness:2,tool:'axe',flammable:true});
-B(6,'bedrock','Bedrock','Коренная порода',{all:TEX.bedrock},{hardness:-1,drop:0});
-B(7,'water','Water','Вода',{all:TEX.water},{solid:false,opaque:false,render:'water',liquid:true,hardness:-1,drop:0,replaceable:true});
-B(8,'lava','Lava','Лава',{all:TEX.lava},{solid:false,opaque:false,render:'water',liquid:true,light:15,hardness:-1,drop:0,replaceable:true});
-B(9,'sand','Sand','Песок',{all:TEX.sand},{hardness:0.5,tool:'shovel'});
-B(10,'sandstone','Sandstone','Песчаник',{top:TEX.sandstone_top,side:TEX.sandstone_side,bottom:TEX.sandstone_top},{hardness:0.8,tool:'pickaxe'});
-B(11,'gravel','Gravel','Гравий',{all:TEX.gravel},{hardness:0.6,tool:'shovel'});
-B(12,'gold_ore','Gold Ore','Золотая руда',{all:TEX.gold_ore},{hardness:3,tool:'pickaxe',level:2});
-B(13,'iron_ore','Iron Ore','Железная руда',{all:TEX.iron_ore},{hardness:3,tool:'pickaxe',level:1});
-B(14,'coal_ore','Coal Ore','Угольная руда',{all:TEX.coal_ore},{hardness:3,tool:'pickaxe',drop:101});
-B(15,'diamond_ore','Diamond Ore','Алмазная руда',{all:TEX.diamond_ore},{hardness:3,tool:'pickaxe',level:2,drop:105});
-B(16,'redstone_ore','Redstone Ore','Красная руда',{all:TEX.redstone_ore},{hardness:3,tool:'pickaxe',level:2,drop:131,dropCount:4});
-B(17,'log','Oak Log','Дубовое бревно',{top:TEX.log_top,side:TEX.log_side,bottom:TEX.log_top},{hardness:2,tool:'axe',flammable:true});
-B(18,'leaves','Oak Leaves','Дубовая листва',{all:TEX.leaves},{hardness:0.2,tint:'foliage',drop:-1,flammable:true});
-B(19,'spruce_log','Spruce Log','Еловое бревно',{top:TEX.log_top,side:TEX.spruce_log_side,bottom:TEX.log_top},{hardness:2,tool:'axe',flammable:true});
-B(20,'spruce_leaves','Spruce Leaves','Еловая листва',{all:TEX.spruce_leaves},{hardness:0.2,tint:'spruce',drop:-1,flammable:true});
-B(21,'glass','Glass','Стекло',{all:TEX.glass},{hardness:0.3,opaque:false,render:'glass',drop:0});
-B(22,'wool','White Wool','Белая шерсть',{all:TEX.wool},{hardness:0.8,flammable:true});
-B(23,'gold_block','Block of Gold','Золотой блок',{all:TEX.gold_block},{hardness:3,tool:'pickaxe',level:2});
-B(24,'iron_block','Block of Iron','Железный блок',{all:TEX.iron_block},{hardness:5,tool:'pickaxe',level:1});
-B(25,'diamond_block','Block of Diamond','Алмазный блок',{all:TEX.diamond_block},{hardness:5,tool:'pickaxe',level:2});
-B(26,'bricks','Bricks','Кирпичи',{all:TEX.brick},{hardness:2,tool:'pickaxe'});
-B(27,'bookshelf','Bookshelf','Книжная полка',{top:TEX.planks,side:TEX.bookshelf,bottom:TEX.planks},{hardness:1.5,tool:'axe',flammable:true});
-B(28,'mossy_cobblestone','Mossy Cobblestone','Замшелый булыжник',{all:TEX.mossy},{hardness:2,tool:'pickaxe'});
-B(29,'obsidian','Obsidian','Обсидиан',{all:TEX.obsidian},{hardness:50,tool:'pickaxe',level:4});
-B(30,'torch','Torch','Факел',{all:TEX.torch},{hardness:0,opaque:false,solid:false,light:14,render:'torch'});
-B(31,'chest','Chest','Сундук',{top:TEX.chest_top,bottom:TEX.chest_top,side:TEX.chest_side,pz:TEX.chest_front},{hardness:2.5,tool:'axe',flammable:true});
-B(32,'crafting_table','Crafting Table','Верстак',{top:TEX.craft_top,bottom:TEX.planks,side:TEX.craft_side,pz:TEX.craft_front,nz:TEX.craft_front},{hardness:2.5,tool:'axe',flammable:true});
-B(33,'furnace','Furnace','Печь',{top:TEX.furnace_top,bottom:TEX.furnace_top,side:TEX.furnace_side,pz:TEX.furnace_front},{hardness:3.5,tool:'pickaxe'});
-B(34,'furnace_lit','Furnace','Печь',{top:TEX.furnace_top,bottom:TEX.furnace_top,side:TEX.furnace_side,pz:TEX.furnace_front_on},{hardness:3.5,tool:'pickaxe',light:13,drop:33});
-B(35,'snow_block','Snow Block','Снежный блок',{all:TEX.snow},{hardness:0.4,tool:'shovel',drop:127,dropCount:4});
-B(36,'clay','Clay','Глина',{all:TEX.clay},{hardness:0.6,tool:'shovel',drop:126,dropCount:4});
-B(37,'cactus','Cactus','Кактус',{top:TEX.cactus_top,bottom:TEX.cactus_top,side:TEX.cactus_side},{hardness:0.4});
-B(38,'glowstone','Glowstone','Светокамень',{all:TEX.glowstone},{hardness:0.3,light:15});
-B(39,'ice','Ice','Лёд',{all:TEX.ice},{hardness:0.5,tool:'pickaxe',opaque:false,render:'glass',drop:0});
-B(40,'snow_grass','Snowy Grass Block','Заснеженная трава',{top:TEX.snow,side:TEX.snow_side,bottom:TEX.dirt},{hardness:0.6,tool:'shovel',drop:3});
-B(41,'verity','Verity','Верити',{all:TEX.verity},{hardness:0.8});
+B(0,'air','Air','Р’РѕР·РґСѓС…',{all:0},{solid:false,opaque:false,render:'none',replaceable:true,drop:0});
+B(1,'stone','Stone','РљР°РјРµРЅСЊ',{all:TEX.stone},{hardness:1.5,tool:'pickaxe',level:0,drop:4});
+B(2,'grass_block','Grass Block','РўСЂР°РІСЏРЅРѕР№ Р±Р»РѕРє',{top:TEX.grass_top,side:TEX.grass_side,bottom:TEX.dirt},{hardness:0.6,tool:'shovel',drop:3,tint:'grass'});
+B(3,'dirt','Dirt','Р—РµРјР»СЏ',{all:TEX.dirt},{hardness:0.5,tool:'shovel'});
+B(4,'cobblestone','Cobblestone','Р‘СѓР»С‹Р¶РЅРёРє',{all:TEX.cobblestone},{hardness:2,tool:'pickaxe'});
+B(5,'planks','Oak Planks','Р”СѓР±РѕРІС‹Рµ РґРѕСЃРєРё',{all:TEX.planks},{hardness:2,tool:'axe',flammable:true});
+B(6,'bedrock','Bedrock','РљРѕСЂРµРЅРЅР°СЏ РїРѕСЂРѕРґР°',{all:TEX.bedrock},{hardness:-1,drop:0});
+B(7,'water','Water','Р’РѕРґР°',{all:TEX.water},{solid:false,opaque:false,render:'water',liquid:true,hardness:-1,drop:0,replaceable:true});
+B(8,'lava','Lava','Р›Р°РІР°',{all:TEX.lava},{solid:false,opaque:false,render:'water',liquid:true,light:15,hardness:-1,drop:0,replaceable:true});
+B(9,'sand','Sand','РџРµСЃРѕРє',{all:TEX.sand},{hardness:0.5,tool:'shovel'});
+B(10,'sandstone','Sandstone','РџРµСЃС‡Р°РЅРёРє',{top:TEX.sandstone_top,side:TEX.sandstone_side,bottom:TEX.sandstone_top},{hardness:0.8,tool:'pickaxe'});
+B(11,'gravel','Gravel','Р“СЂР°РІРёР№',{all:TEX.gravel},{hardness:0.6,tool:'shovel'});
+B(12,'gold_ore','Gold Ore','Р—РѕР»РѕС‚Р°СЏ СЂСѓРґР°',{all:TEX.gold_ore},{hardness:3,tool:'pickaxe',level:2});
+B(13,'iron_ore','Iron Ore','Р–РµР»РµР·РЅР°СЏ СЂСѓРґР°',{all:TEX.iron_ore},{hardness:3,tool:'pickaxe',level:1});
+B(14,'coal_ore','Coal Ore','РЈРіРѕР»СЊРЅР°СЏ СЂСѓРґР°',{all:TEX.coal_ore},{hardness:3,tool:'pickaxe',drop:101});
+B(15,'diamond_ore','Diamond Ore','РђР»РјР°Р·РЅР°СЏ СЂСѓРґР°',{all:TEX.diamond_ore},{hardness:3,tool:'pickaxe',level:2,drop:105});
+B(16,'redstone_ore','Redstone Ore','РљСЂР°СЃРЅР°СЏ СЂСѓРґР°',{all:TEX.redstone_ore},{hardness:3,tool:'pickaxe',level:2,drop:131,dropCount:4});
+B(17,'log','Oak Log','Р”СѓР±РѕРІРѕРµ Р±СЂРµРІРЅРѕ',{top:TEX.log_top,side:TEX.log_side,bottom:TEX.log_top},{hardness:2,tool:'axe',flammable:true});
+B(18,'leaves','Oak Leaves','Р”СѓР±РѕРІР°СЏ Р»РёСЃС‚РІР°',{all:TEX.leaves},{hardness:0.2,tint:'foliage',drop:-1,flammable:true});
+B(19,'spruce_log','Spruce Log','Р•Р»РѕРІРѕРµ Р±СЂРµРІРЅРѕ',{top:TEX.log_top,side:TEX.spruce_log_side,bottom:TEX.log_top},{hardness:2,tool:'axe',flammable:true});
+B(20,'spruce_leaves','Spruce Leaves','Р•Р»РѕРІР°СЏ Р»РёСЃС‚РІР°',{all:TEX.spruce_leaves},{hardness:0.2,tint:'spruce',drop:-1,flammable:true});
+B(21,'glass','Glass','РЎС‚РµРєР»Рѕ',{all:TEX.glass},{hardness:0.3,opaque:false,render:'glass',drop:0});
+B(22,'wool','White Wool','Р‘РµР»Р°СЏ С€РµСЂСЃС‚СЊ',{all:TEX.wool},{hardness:0.8,flammable:true});
+B(23,'gold_block','Block of Gold','Р—РѕР»РѕС‚РѕР№ Р±Р»РѕРє',{all:TEX.gold_block},{hardness:3,tool:'pickaxe',level:2});
+B(24,'iron_block','Block of Iron','Р–РµР»РµР·РЅС‹Р№ Р±Р»РѕРє',{all:TEX.iron_block},{hardness:5,tool:'pickaxe',level:1});
+B(25,'diamond_block','Block of Diamond','РђР»РјР°Р·РЅС‹Р№ Р±Р»РѕРє',{all:TEX.diamond_block},{hardness:5,tool:'pickaxe',level:2});
+B(26,'bricks','Bricks','РљРёСЂРїРёС‡Рё',{all:TEX.brick},{hardness:2,tool:'pickaxe'});
+B(27,'bookshelf','Bookshelf','РљРЅРёР¶РЅР°СЏ РїРѕР»РєР°',{top:TEX.planks,side:TEX.bookshelf,bottom:TEX.planks},{hardness:1.5,tool:'axe',flammable:true});
+B(28,'mossy_cobblestone','Mossy Cobblestone','Р—Р°РјС€РµР»С‹Р№ Р±СѓР»С‹Р¶РЅРёРє',{all:TEX.mossy},{hardness:2,tool:'pickaxe'});
+B(29,'obsidian','Obsidian','РћР±СЃРёРґРёР°РЅ',{all:TEX.obsidian},{hardness:50,tool:'pickaxe',level:4});
+B(30,'torch','Torch','Р¤Р°РєРµР»',{all:TEX.torch},{hardness:0,opaque:false,solid:false,light:14,render:'torch'});
+B(31,'chest','Chest','РЎСѓРЅРґСѓРє',{top:TEX.chest_top,bottom:TEX.chest_top,side:TEX.chest_side,pz:TEX.chest_front},{hardness:2.5,tool:'axe',flammable:true});
+B(32,'crafting_table','Crafting Table','Р’РµСЂСЃС‚Р°Рє',{top:TEX.craft_top,bottom:TEX.planks,side:TEX.craft_side,pz:TEX.craft_front,nz:TEX.craft_front},{hardness:2.5,tool:'axe',flammable:true});
+B(33,'furnace','Furnace','РџРµС‡СЊ',{top:TEX.furnace_top,bottom:TEX.furnace_top,side:TEX.furnace_side,pz:TEX.furnace_front},{hardness:3.5,tool:'pickaxe'});
+B(34,'furnace_lit','Furnace','РџРµС‡СЊ',{top:TEX.furnace_top,bottom:TEX.furnace_top,side:TEX.furnace_side,pz:TEX.furnace_front_on},{hardness:3.5,tool:'pickaxe',light:13,drop:33});
+B(35,'snow_block','Snow Block','РЎРЅРµР¶РЅС‹Р№ Р±Р»РѕРє',{all:TEX.snow},{hardness:0.4,tool:'shovel',drop:127,dropCount:4});
+B(36,'clay','Clay','Р“Р»РёРЅР°',{all:TEX.clay},{hardness:0.6,tool:'shovel',drop:126,dropCount:4});
+B(37,'cactus','Cactus','РљР°РєС‚СѓСЃ',{top:TEX.cactus_top,bottom:TEX.cactus_top,side:TEX.cactus_side},{hardness:0.4});
+B(38,'glowstone','Glowstone','РЎРІРµС‚РѕРєР°РјРµРЅСЊ',{all:TEX.glowstone},{hardness:0.3,light:15});
+B(39,'ice','Ice','Р›С‘Рґ',{all:TEX.ice},{hardness:0.5,tool:'pickaxe',opaque:false,render:'glass',drop:0});
+B(40,'snow_grass','Snowy Grass Block','Р—Р°СЃРЅРµР¶РµРЅРЅР°СЏ С‚СЂР°РІР°',{top:TEX.snow,side:TEX.snow_side,bottom:TEX.dirt},{hardness:0.6,tool:'shovel',drop:3});
+B(41,'verity','Verity','Р’РµСЂРёС‚Рё',{all:TEX.verity},{hardness:0.8});
 
 const isOpaque = (id)=> BLOCKS[id].opaque;
 const isSolid  = (id)=> BLOCKS[id].solid;
@@ -911,52 +911,52 @@ for (const b of BLOCKS){ if(!b) continue; if(b.id===0) continue;
 }
 delete ITEMS[7]; delete ITEMS[8]; delete ITEMS[34]; // liquids / lit furnace are not items
 
-I(100,'stick','Stick','Палка',{icon:'stick',color:'#9d7f4f'});
-I(101,'coal','Coal','Уголь',{icon:'round',color:'#1e1e1e'});
-I(102,'charcoal','Charcoal','Древесный уголь',{icon:'round',color:'#33291e'});
-I(103,'iron_ingot','Iron Ingot','Железный слиток',{icon:'ingot',color:'#d8d8d8'});
-I(104,'gold_ingot','Gold Ingot','Золотой слиток',{icon:'ingot',color:'#f6ce50'});
-I(105,'diamond','Diamond','Алмаз',{icon:'gem',color:'#5ce8e8'});
-I(106,'apple','Apple','Яблоко',{icon:'round',color:'#d43b2f',food:4});
-I(107,'bread','Bread','Хлеб',{icon:'loaf',color:'#c69b52',food:5});
-I(108,'wheat','Wheat','Пшеница',{icon:'stick',color:'#dcbb65'});
-I(109,'wheat_seeds','Wheat Seeds','Семена пшеницы',{icon:'dust',color:'#8cbb4a'});
-I(110,'porkchop','Raw Porkchop','Сырая свинина',{icon:'meat',color:'#e08e8e',food:3});
-I(111,'cooked_porkchop','Cooked Porkchop','Жареная свинина',{icon:'meat',color:'#c2762f',food:8});
-I(112,'leather','Leather','Кожа',{icon:'flat',color:'#9c6d3f'});
-I(113,'feather','Feather','Перо',{icon:'stick',color:'#efefef'});
-I(114,'string','String','Нить',{icon:'stick',color:'#dddddd'});
-I(115,'gunpowder','Gunpowder','Порох',{icon:'dust',color:'#9a9a9a'});
-I(116,'bone','Bone','Кость',{icon:'stick',color:'#e6e3d4'});
-I(117,'arrow','Arrow','Стрела',{icon:'arrow',color:'#b0b0b0'});
-I(118,'flint','Flint','Кремень',{icon:'gem',color:'#4b4b4b'});
-I(119,'egg','Egg','Яйцо',{icon:'round',color:'#f0e2cd',stack:16});
-I(120,'slimeball','Slimeball','Слизь',{icon:'round',color:'#7bd07b'});
-I(121,'ender_pearl','Ender Pearl','Жемчуг Края',{icon:'round',color:'#2f8f80',stack:16});
-I(122,'bucket','Bucket','Ведро',{icon:'bucket',color:'#c8c8c8',stack:1});
-I(123,'water_bucket','Water Bucket','Ведро воды',{icon:'bucket',color:'#3a6fd8',stack:1});
-I(124,'lava_bucket','Lava Bucket','Ведро лавы',{icon:'bucket',color:'#e07020',stack:1});
-I(125,'brick','Brick','Кирпич',{icon:'flat',color:'#a75144'});
-I(126,'clay_ball','Clay Ball','Глина',{icon:'round',color:'#a0a6b3'});
-I(127,'snowball','Snowball','Снежок',{icon:'round',color:'#f0f6ff',stack:16});
-I(128,'rotten_flesh','Rotten Flesh','Гнилая плоть',{icon:'meat',color:'#8a6a4a',food:2});
-I(129,'spider_eye','Spider Eye','Паучий глаз',{icon:'round',color:'#8a2c2c',food:1});
-I(130,'raw_beef','Raw Beef','Сырая говядина',{icon:'meat',color:'#d05a5a',food:3});
-I(131,'redstone','Redstone Dust','Красная пыль',{icon:'dust',color:'#d02020'});
-I(132,'steak','Steak','Стейк',{icon:'meat',color:'#a8501e',food:8});
-I(133,'chicken','Raw Chicken','Сырая курятина',{icon:'meat',color:'#e0b0a0',food:2});
-I(134,'cooked_chicken','Cooked Chicken','Жареная курятина',{icon:'meat',color:'#c08a4a',food:6});
+I(100,'stick','Stick','РџР°Р»РєР°',{icon:'stick',color:'#9d7f4f'});
+I(101,'coal','Coal','РЈРіРѕР»СЊ',{icon:'round',color:'#1e1e1e'});
+I(102,'charcoal','Charcoal','Р”СЂРµРІРµСЃРЅС‹Р№ СѓРіРѕР»СЊ',{icon:'round',color:'#33291e'});
+I(103,'iron_ingot','Iron Ingot','Р–РµР»РµР·РЅС‹Р№ СЃР»РёС‚РѕРє',{icon:'ingot',color:'#d8d8d8'});
+I(104,'gold_ingot','Gold Ingot','Р—РѕР»РѕС‚РѕР№ СЃР»РёС‚РѕРє',{icon:'ingot',color:'#f6ce50'});
+I(105,'diamond','Diamond','РђР»РјР°Р·',{icon:'gem',color:'#5ce8e8'});
+I(106,'apple','Apple','РЇР±Р»РѕРєРѕ',{icon:'round',color:'#d43b2f',food:4});
+I(107,'bread','Bread','РҐР»РµР±',{icon:'loaf',color:'#c69b52',food:5});
+I(108,'wheat','Wheat','РџС€РµРЅРёС†Р°',{icon:'stick',color:'#dcbb65'});
+I(109,'wheat_seeds','Wheat Seeds','РЎРµРјРµРЅР° РїС€РµРЅРёС†С‹',{icon:'dust',color:'#8cbb4a'});
+I(110,'porkchop','Raw Porkchop','РЎС‹СЂР°СЏ СЃРІРёРЅРёРЅР°',{icon:'meat',color:'#e08e8e',food:3});
+I(111,'cooked_porkchop','Cooked Porkchop','Р–Р°СЂРµРЅР°СЏ СЃРІРёРЅРёРЅР°',{icon:'meat',color:'#c2762f',food:8});
+I(112,'leather','Leather','РљРѕР¶Р°',{icon:'flat',color:'#9c6d3f'});
+I(113,'feather','Feather','РџРµСЂРѕ',{icon:'stick',color:'#efefef'});
+I(114,'string','String','РќРёС‚СЊ',{icon:'stick',color:'#dddddd'});
+I(115,'gunpowder','Gunpowder','РџРѕСЂРѕС…',{icon:'dust',color:'#9a9a9a'});
+I(116,'bone','Bone','РљРѕСЃС‚СЊ',{icon:'stick',color:'#e6e3d4'});
+I(117,'arrow','Arrow','РЎС‚СЂРµР»Р°',{icon:'arrow',color:'#b0b0b0'});
+I(118,'flint','Flint','РљСЂРµРјРµРЅСЊ',{icon:'gem',color:'#4b4b4b'});
+I(119,'egg','Egg','РЇР№С†Рѕ',{icon:'round',color:'#f0e2cd',stack:16});
+I(120,'slimeball','Slimeball','РЎР»РёР·СЊ',{icon:'round',color:'#7bd07b'});
+I(121,'ender_pearl','Ender Pearl','Р–РµРјС‡СѓРі РљСЂР°СЏ',{icon:'round',color:'#2f8f80',stack:16});
+I(122,'bucket','Bucket','Р’РµРґСЂРѕ',{icon:'bucket',color:'#c8c8c8',stack:1});
+I(123,'water_bucket','Water Bucket','Р’РµРґСЂРѕ РІРѕРґС‹',{icon:'bucket',color:'#3a6fd8',stack:1});
+I(124,'lava_bucket','Lava Bucket','Р’РµРґСЂРѕ Р»Р°РІС‹',{icon:'bucket',color:'#e07020',stack:1});
+I(125,'brick','Brick','РљРёСЂРїРёС‡',{icon:'flat',color:'#a75144'});
+I(126,'clay_ball','Clay Ball','Р“Р»РёРЅР°',{icon:'round',color:'#a0a6b3'});
+I(127,'snowball','Snowball','РЎРЅРµР¶РѕРє',{icon:'round',color:'#f0f6ff',stack:16});
+I(128,'rotten_flesh','Rotten Flesh','Р“РЅРёР»Р°СЏ РїР»РѕС‚СЊ',{icon:'meat',color:'#8a6a4a',food:2});
+I(129,'spider_eye','Spider Eye','РџР°СѓС‡РёР№ РіР»Р°Р·',{icon:'round',color:'#8a2c2c',food:1});
+I(130,'raw_beef','Raw Beef','РЎС‹СЂР°СЏ РіРѕРІСЏРґРёРЅР°',{icon:'meat',color:'#d05a5a',food:3});
+I(131,'redstone','Redstone Dust','РљСЂР°СЃРЅР°СЏ РїС‹Р»СЊ',{icon:'dust',color:'#d02020'});
+I(132,'steak','Steak','РЎС‚РµР№Рє',{icon:'meat',color:'#a8501e',food:8});
+I(133,'chicken','Raw Chicken','РЎС‹СЂР°СЏ РєСѓСЂСЏС‚РёРЅР°',{icon:'meat',color:'#e0b0a0',food:2});
+I(134,'cooked_chicken','Cooked Chicken','Р–Р°СЂРµРЅР°СЏ РєСѓСЂСЏС‚РёРЅР°',{icon:'meat',color:'#c08a4a',food:6});
 
 const TIERS = ['wood','stone','iron','gold','diamond'];
-const TIER_NAME = [['Wooden','Деревянн'],['Stone','Каменн'],['Iron','Железн'],['Golden','Золот'],['Diamond','Алмазн']];
+const TIER_NAME = [['Wooden','Р”РµСЂРµРІСЏРЅРЅ'],['Stone','РљР°РјРµРЅРЅ'],['Iron','Р–РµР»РµР·РЅ'],['Golden','Р—РѕР»РѕС‚'],['Diamond','РђР»РјР°Р·РЅ']];
 const TIER_SPEED = [2,4,6,12,8];
 const TIER_DUR   = [59,131,250,32,1561];
 const TIER_COLOR = ['#9d7f4f','#8a8a8a','#d8d8d8','#f6ce50','#5ce8e8'];
 const TOOL_KINDS = [
-  {kind:'pickaxe', base:140, en:'Pickaxe', ru:['Деревянная кирка','Каменная кирка','Железная кирка','Золотая кирка','Алмазная кирка'], dmg:[2,3,4,2,5]},
-  {kind:'axe',     base:145, en:'Axe',     ru:['Деревянный топор','Каменный топор','Железный топор','Золотой топор','Алмазный топор'], dmg:[3,4,5,3,6]},
-  {kind:'shovel',  base:150, en:'Shovel',  ru:['Деревянная лопата','Каменная лопата','Железная лопата','Золотая лопата','Алмазная лопата'], dmg:[2,2,3,2,3]},
-  {kind:'sword',   base:155, en:'Sword',   ru:['Деревянный меч','Каменный меч','Железный меч','Золотой меч','Алмазный меч'], dmg:[4,5,6,4,7]},
+  {kind:'pickaxe', base:140, en:'Pickaxe', ru:['Р”РµСЂРµРІСЏРЅРЅР°СЏ РєРёСЂРєР°','РљР°РјРµРЅРЅР°СЏ РєРёСЂРєР°','Р–РµР»РµР·РЅР°СЏ РєРёСЂРєР°','Р—РѕР»РѕС‚Р°СЏ РєРёСЂРєР°','РђР»РјР°Р·РЅР°СЏ РєРёСЂРєР°'], dmg:[2,3,4,2,5]},
+  {kind:'axe',     base:145, en:'Axe',     ru:['Р”РµСЂРµРІСЏРЅРЅС‹Р№ С‚РѕРїРѕСЂ','РљР°РјРµРЅРЅС‹Р№ С‚РѕРїРѕСЂ','Р–РµР»РµР·РЅС‹Р№ С‚РѕРїРѕСЂ','Р—РѕР»РѕС‚РѕР№ С‚РѕРїРѕСЂ','РђР»РјР°Р·РЅС‹Р№ С‚РѕРїРѕСЂ'], dmg:[3,4,5,3,6]},
+  {kind:'shovel',  base:150, en:'Shovel',  ru:['Р”РµСЂРµРІСЏРЅРЅР°СЏ Р»РѕРїР°С‚Р°','РљР°РјРµРЅРЅР°СЏ Р»РѕРїР°С‚Р°','Р–РµР»РµР·РЅР°СЏ Р»РѕРїР°С‚Р°','Р—РѕР»РѕС‚Р°СЏ Р»РѕРїР°С‚Р°','РђР»РјР°Р·РЅР°СЏ Р»РѕРїР°С‚Р°'], dmg:[2,2,3,2,3]},
+  {kind:'sword',   base:155, en:'Sword',   ru:['Р”РµСЂРµРІСЏРЅРЅС‹Р№ РјРµС‡','РљР°РјРµРЅРЅС‹Р№ РјРµС‡','Р–РµР»РµР·РЅС‹Р№ РјРµС‡','Р—РѕР»РѕС‚РѕР№ РјРµС‡','РђР»РјР°Р·РЅС‹Р№ РјРµС‡'], dmg:[4,5,6,4,7]},
 ];
 for (const tk of TOOL_KINDS){
   for (let i=0;i<5;i++){
@@ -964,7 +964,7 @@ for (const tk of TOOL_KINDS){
       {stack:1, tool:tk.kind, tier:i, dmg:tk.dmg[i], maxDur:TIER_DUR[i], icon:tk.kind, color:TIER_COLOR[i]});
   }
 }
-I(160,'bow','Bow','Лук',{stack:1,icon:'bow',color:'#9d7f4f',maxDur:384});
+I(160,'bow','Bow','Р›СѓРє',{stack:1,icon:'bow',color:'#9d7f4f',maxDur:384});
 
 function itemDef(id){ return ITEMS[id] || null; }
 function itemName(id){ const d=itemDef(id); return d? (LANG==='ru'?(d.ru||d.en):d.en) : '?'; }
@@ -1968,7 +1968,7 @@ function updateGodrays(){
 }
 
 /* ------------------------------------------------------------------ *
- * 10. AUDIO (fully procedural — no external assets)                    *
+ * 10. AUDIO (fully procedural вЂ” no external assets)                    *
  * ------------------------------------------------------------------ */
 const Sfx = {
   ctx:null, master:null, musicGain:null,
@@ -2416,26 +2416,26 @@ function endermanModel(mat){
 }
 
 const MOBDEF = {
-  pig:      {en:'Pig',ru:'Свинья',hostile:0,hp:10,w:0.9,h:0.9,spd:1.5,drops:[[110,1,3]],
+  pig:      {en:'Pig',ru:'РЎРІРёРЅСЊСЏ',hostile:0,hp:10,w:0.9,h:0.9,spd:1.5,drops:[[110,1,3]],
              build:(m)=>quadruped({mat:m,bw:10,bh:8,bl:16,lw:4,lh:6,hw:8,hh:8,hl:8,body:0xf0a5a2,head:0xf0a5a2,leg:0xe08a88,snout:[4,3,0xd07a78]})},
-  cow:      {en:'Cow',ru:'Корова',hostile:0,hp:10,w:0.9,h:1.4,spd:1.4,drops:[[130,1,3],[112,0,2]],
+  cow:      {en:'Cow',ru:'РљРѕСЂРѕРІР°',hostile:0,hp:10,w:0.9,h:1.4,spd:1.4,drops:[[130,1,3],[112,0,2]],
              build:(m)=>quadruped({mat:m,bw:12,bh:10,bl:18,lw:4,lh:12,hw:8,hh:8,hl:8,body:0x443626,head:0x443626,leg:0x3a2e20,horns:1,tail:8})},
-  sheep:    {en:'Sheep',ru:'Овца',hostile:0,hp:8,w:0.9,h:1.3,spd:1.4,drops:[[22,1,1]],
+  sheep:    {en:'Sheep',ru:'РћРІС†Р°',hostile:0,hp:8,w:0.9,h:1.3,spd:1.4,drops:[[22,1,1]],
              build:(m)=>quadruped({mat:m,bw:12,bh:12,bl:18,lw:4,lh:10,hw:7,hh:8,hl:8,body:0xeeeeee,head:0xd8c5b0,leg:0xd8c5b0,tail:4})},
-  chicken:  {en:'Chicken',ru:'Курица',hostile:0,hp:4,w:0.5,h:0.8,spd:1.6,drops:[[133,1,1],[113,0,2]],build:(m)=>chickenModel(m)},
-  squid:    {en:'Squid',ru:'Спрут',hostile:0,hp:10,w:0.8,h:0.8,spd:1.2,water:1,drops:[[131,1,3]],build:(m)=>squidModel(m)},
-  wolf:     {en:'Wolf',ru:'Волк',hostile:0,hp:8,w:0.6,h:0.85,spd:2.6,drops:[],
+  chicken:  {en:'Chicken',ru:'РљСѓСЂРёС†Р°',hostile:0,hp:4,w:0.5,h:0.8,spd:1.6,drops:[[133,1,1],[113,0,2]],build:(m)=>chickenModel(m)},
+  squid:    {en:'Squid',ru:'РЎРїСЂСѓС‚',hostile:0,hp:10,w:0.8,h:0.8,spd:1.2,water:1,drops:[[131,1,3]],build:(m)=>squidModel(m)},
+  wolf:     {en:'Wolf',ru:'Р’РѕР»Рє',hostile:0,hp:8,w:0.6,h:0.85,spd:2.6,drops:[],
              build:(m)=>quadruped({mat:m,bw:6,bh:6,bl:14,lw:3,lh:8,hw:6,hh:6,hl:6,body:0xd4d4d4,head:0xd4d4d4,leg:0xc0c0c0,tail:8})},
-  villager: {en:'Villager',ru:'Житель',hostile:0,hp:20,w:0.6,h:1.9,spd:1.1,drops:[],
+  villager: {en:'Villager',ru:'Р–РёС‚РµР»СЊ',hostile:0,hp:20,w:0.6,h:1.9,spd:1.1,drops:[],
              build:(m)=>biped({mat:m,sk:0xc09a72,cloth:0x8b5a3c,legc:0x5a4030,arm:0xc09a72,mouth:0x7a5a3a})},
-  zombie:   {en:'Zombie',ru:'Зомби',hostile:1,hp:20,w:0.6,h:1.9,spd:1.5,dmg:3,burn:1,drops:[[128,0,2]],
+  zombie:   {en:'Zombie',ru:'Р—РѕРјР±Рё',hostile:1,hp:20,w:0.6,h:1.9,spd:1.5,dmg:3,burn:1,drops:[[128,0,2]],
              build:(m)=>biped({mat:m,sk:0x4a7a3a,cloth:0x2f4f8f,legc:0x2a3a5a,arm:0x4a7a3a,eye:0x101010})},
-  skeleton: {en:'Skeleton',ru:'Скелет',hostile:1,hp:20,w:0.6,h:1.9,spd:1.4,dmg:2,burn:1,ranged:1,drops:[[116,0,2],[117,0,2]],
+  skeleton: {en:'Skeleton',ru:'РЎРєРµР»РµС‚',hostile:1,hp:20,w:0.6,h:1.9,spd:1.4,dmg:2,burn:1,ranged:1,drops:[[116,0,2],[117,0,2]],
              build:(m)=>biped({mat:m,sk:0xd8d8d0,cloth:0xc8c8c0,legc:0xc0c0b8,arm:0xd0d0c8,eye:0x000000})},
-  creeper:  {en:'Creeper',ru:'Крипер',hostile:1,hp:20,w:0.6,h:1.7,spd:1.4,dmg:0,explode:1,drops:[[115,0,2]],build:(m)=>creeperModel(m)},
-  spider:   {en:'Spider',ru:'Паук',hostile:1,hp:16,w:1.2,h:0.9,spd:2.2,dmg:2,drops:[[114,0,2],[129,0,1]],build:(m)=>spiderModel(m)},
-  enderman: {en:'Enderman',ru:'Странник Края',hostile:2,hp:40,w:0.6,h:2.9,spd:2.4,dmg:5,tp:1,drops:[[121,0,1]],build:(m)=>endermanModel(m)},
-  slime:    {en:'Slime',ru:'Слизень',hostile:1,hp:16,w:1.0,h:1.0,spd:1.0,dmg:2,jump:1,drops:[[120,1,2]],build:(m,sz)=>slimeModel(m,sz||2)},
+  creeper:  {en:'Creeper',ru:'РљСЂРёРїРµСЂ',hostile:1,hp:20,w:0.6,h:1.7,spd:1.4,dmg:0,explode:1,drops:[[115,0,2]],build:(m)=>creeperModel(m)},
+  spider:   {en:'Spider',ru:'РџР°СѓРє',hostile:1,hp:16,w:1.2,h:0.9,spd:2.2,dmg:2,drops:[[114,0,2],[129,0,1]],build:(m)=>spiderModel(m)},
+  enderman: {en:'Enderman',ru:'РЎС‚СЂР°РЅРЅРёРє РљСЂР°СЏ',hostile:2,hp:40,w:0.6,h:2.9,spd:2.4,dmg:5,tp:1,drops:[[121,0,1]],build:(m)=>endermanModel(m)},
+  slime:    {en:'Slime',ru:'РЎР»РёР·РµРЅСЊ',hostile:1,hp:16,w:1.0,h:1.0,spd:1.0,dmg:2,jump:1,drops:[[120,1,2]],build:(m,sz)=>slimeModel(m,sz||2)},
 };
 function mobName(kind){ const d=MOBDEF[kind]; return d? (LANG==='ru'?d.ru:d.en):kind; }
 
@@ -4296,9 +4296,9 @@ function screenMultiplayer(){
       const st=document.getElementById('mpNickStatus');
       if(/^[a-zA-Z0-9]{3,16}$/.test(v)){
         mpSaveNick(v);
-        if(st){ st.textContent='✓ '+t('mp.nickSaved')+' '+v; st.style.color='#8f8'; }
+        if(st){ st.textContent='вњ“ '+t('mp.nickSaved')+' '+v; st.style.color='#8f8'; }
       } else {
-        if(st){ st.textContent='✗ '+t('mp.nameInvalid'); st.style.color='#f88'; }
+        if(st){ st.textContent='вњ— '+t('mp.nameInvalid'); st.style.color='#f88'; }
       }
     };
 
@@ -4321,13 +4321,13 @@ function screenMultiplayer(){
             });
           };
         }
-        if(statusEl){ statusEl.textContent=t('mp.youAreHost')+' — '+t('mp.code')+': '+MP.code; statusEl.style.color='#8f8'; }
+        if(statusEl){ statusEl.textContent=t('mp.youAreHost')+' вЂ” '+t('mp.code')+': '+MP.code; statusEl.style.color='#8f8'; }
         // Show player list updater
         const plEl=document.getElementById('mpMainPlayerList');
         if(plEl){
           plEl.style.display='block';
           const updatePL=()=>{
-            let html='<div><b>'+MP.nick+'</b> (You) <span class="host-badge">★ HOST</span></div>';
+            let html='<div><b>'+MP.nick+'</b> (You) <span class="host-badge">в… HOST</span></div>';
             for(const [pid,p] of MP.peers) html+='<div>'+p.nick+'</div>';
             plEl.innerHTML=html;
             if(MP.enabled) requestAnimationFrame(updatePL);
@@ -4359,7 +4359,7 @@ function screenMultiplayer(){
 function screenBye(){
   const s=el('div','screen dirt');
   s.appendChild(el('div','ttl','LARPCRAFT'));
-  s.appendChild(el('div','sub', LANG==='ru'?'Можно закрыть вкладку.':'You may now close this tab.'));
+  s.appendChild(el('div','sub', LANG==='ru'?'РњРѕР¶РЅРѕ Р·Р°РєСЂС‹С‚СЊ РІРєР»Р°РґРєСѓ.':'You may now close this tab.'));
   s.appendChild(btn(t('gui.back'), ()=>{ pickSplash(); showScreen(screenTitle()); }));
   return s;
 }
@@ -4368,7 +4368,7 @@ function screenLanguage(){
   s.appendChild(el('div','sub',t('options.language')));
   const box=el('div','wrapc');
   for (const k in LANGS){
-    const b=btn(LANGS[k]+(k===LANG?'  ✓':''), ()=>{
+    const b=btn(LANGS[k]+(k===LANG?'  вњ“':''), ()=>{
       LANG=k; S.lang=k; saveSettings(); pickSplash(); showScreen(screenLanguage());
       if (hudEl) refreshHotbar();
     });
@@ -4395,7 +4395,7 @@ function screenWorlds(){
     const meta2=el('div','meta');
     meta2.appendChild(el('div','n',w.name));
     const dt=new Date(w.lastPlayed||w.created||Date.now());
-    meta2.appendChild(el('div','d', dt.toLocaleString()+'  ·  '+t(w.mode==='creative'?'gameMode.creative':'gameMode.survival')));
+    meta2.appendChild(el('div','d', dt.toLocaleString()+'  В·  '+t(w.mode==='creative'?'gameMode.creative':'gameMode.survival')));
     meta2.appendChild(el('div','d', t('createWorld.seed')+': '+(w.seed>>>0)));
     it.appendChild(meta2);
     it.addEventListener('click',()=>{ selectedWorld=w.id; rebuild(); });
@@ -4510,10 +4510,10 @@ function screenKeys(fromPause){
   s.appendChild(el('div','sub',t('keys.title')));
   const rows=[
     ['W A S D', t('keys.move')], ['Space', t('keys.jump')], ['Shift', t('keys.sneak')],
-    ['Ctrl / W×2', t('keys.sprint')], ['E', t('keys.inventory')], ['Q', t('keys.drop')],
-    ['ЛКМ / LMB', t('keys.attack')], ['ПКМ / RMB', t('keys.use')], ['СКМ / MMB', t('keys.pick')],
-    ['1 – 9', t('keys.hotbar')], ['T', t('keys.chat')], ['F3', t('keys.debug')],
-    ['Space ×2', t('keys.fly')], ['Esc', t('keys.pause')],
+    ['Ctrl / WГ—2', t('keys.sprint')], ['E', t('keys.inventory')], ['Q', t('keys.drop')],
+    ['Р›РљРњ / LMB', t('keys.attack')], ['РџРљРњ / RMB', t('keys.use')], ['РЎРљРњ / MMB', t('keys.pick')],
+    ['1 вЂ“ 9', t('keys.hotbar')], ['T', t('keys.chat')], ['F3', t('keys.debug')],
+    ['Space Г—2', t('keys.fly')], ['Esc', t('keys.pause')],
   ];
   const box=el('div','keys');
   for (const [k,v] of rows){
@@ -4548,9 +4548,9 @@ function screenPause(){
   } else {
     const codeDisplay=MP.code?MP.code:'---';
     const playersHTML=[];
-    playersHTML.push('<div><b>'+MP.nick+'</b> (You) '+(MP.isHost?'<span class="host-badge">★ HOST</span>':'')+'</div>');
+    playersHTML.push('<div><b>'+MP.nick+'</b> (You) '+(MP.isHost?'<span class="host-badge">в… HOST</span>':'')+'</div>');
     for(const [pid,p] of MP.peers){
-      playersHTML.push('<div>'+p.nick+(p.mode==='creative'?' ✦':'')+'</div>');
+      playersHTML.push('<div>'+p.nick+(p.mode==='creative'?' вњ¦':'')+'</div>');
     }
     mpDiv.innerHTML='<h4>'+t('mp.title')+'</h4>'+
       (MP.isHost?
@@ -4560,7 +4560,7 @@ function screenPause(){
       (MP.isHost?
         '<div class="wrapc" style="gap:4px;margin-top:6px">'+
         '<button class="btn tiny" id="mpToggleGM">'+(player&&player.mode==='creative'?t('mp.survival'):t('mp.creative'))+'</button>'+
-        '<div class="mp-status" id="mpStatus">'+t('mp.youAreHost')+' — '+MP.peers.size+' '+t('mp.players').toLowerCase()+'</div>'+
+        '<div class="mp-status" id="mpStatus">'+t('mp.youAreHost')+' вЂ” '+MP.peers.size+' '+t('mp.players').toLowerCase()+'</div>'+
         '</div>':
         '<div class="mp-status" id="mpStatus">'+t('mp.connected')+'</div>')+
       '<button class="btn tiny" id="mpDisconnectBtn" style="margin-top:6px;width:100%">'+t('mp.disconnect')+'</button>';
@@ -4578,11 +4578,11 @@ function screenPause(){
       const v=(inp?inp.value:'').trim();
       if(/^[a-zA-Z0-9]{3,16}$/.test(v)){
         mpSaveNick(v);
-        snb.textContent='✓ '+t('mp.nickSaved');
+        snb.textContent='вњ“ '+t('mp.nickSaved');
         snb.style.color='#8f8';
         setTimeout(()=>{ snb.textContent=t('mp.saveNick'); snb.style.color=''; },1500);
       } else {
-        snb.textContent='✗ '+t('mp.nameInvalid');
+        snb.textContent='вњ— '+t('mp.nameInvalid');
         snb.style.color='#f88';
         setTimeout(()=>{ snb.textContent='Save Nick'; snb.style.color=''; },1500);
       }
@@ -4767,7 +4767,7 @@ async function startWorld(m, data){
   f3El.classList.toggle('hidden',!S.showF3);
   showScreen(null);
   refreshHotbar(); refreshBars(); showItemName();
-  chat('LARPCRAFT '+VERSION+' — '+t('chat.seed', world.seed));
+  chat('LARPCRAFT '+VERSION+' вЂ” '+t('chat.seed', world.seed));
   chat(t('chat.help'));
   lastSave=performance.now();
   Sfx.init(); Sfx.resume();
@@ -4881,7 +4881,7 @@ const Music = {
 };
 
 /* ------------------------------------------------------------------ *
- * 30b. MULTIPLAYER — WebRTC PeerJS                                    *
+ * 30b. MULTIPLAYER вЂ” WebRTC PeerJS                                    *
  * ------------------------------------------------------------------ */
 const MP = {
   enabled:false, isHost:false, connected:false,
@@ -4929,7 +4929,7 @@ function mpStartHost(){
     MP.myId=myId;
     MP.isHost=true; MP.enabled=true; MP.connected=true;
     MP.peers.clear();
-    chat('[MP] '+t('mp.youAreHost')+' — '+t('mp.code')+': '+MP.code);
+    chat('[MP] '+t('mp.youAreHost')+' вЂ” '+t('mp.code')+': '+MP.code);
     refreshPauseMultiplayerUI();
   });
   MP.peer.on('connection', conn=>{
@@ -4996,11 +4996,11 @@ function handleClientMessage(data) {
     case 'welcome': MP.hostNick = data.hostNick; applyWorldData(data); break;
     case 'worldMods': applyOnlyMods(data.mods); break;
     case 'playerPos': updateRemotePlayer(data.pid, data); break;
+    case 'spawnItem': spawnRemoteItem(data); break;
+    case 'removeItem': removeRemoteEntity(data.eid); break;
     case 'chat': chat('<' + data.nick + '> ' + data.msg); break;
     case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); break;
     case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); break;
-    case 'spawnItem': spawnRemoteItem(data); break;
-    case 'removeItem': removeRemoteEntity(data.eid); break;
     case 'pvpHit': player.damage(data.dmg); chat('[PVP] Hit by ' + data.from); break;
     case 'gamemode': player.mode = data.mode; refreshBars(); break;
   }
@@ -5009,41 +5009,18 @@ function handleClientMessage(data) {
 function applyWorldData(data){
   if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
   try {
-  loading = true; menuMode = false; inGame = false;
   chat('[MP] Generating world...');
-  world = new World(data.seed); world.time = data.time;
-  const sp = data.spawn;
-  const R = 6;
-  for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
-  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; ChunkMgr.mesh(world, ch); }
-  let sy = sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) { if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; } }
-  player = new Player(world, sp.x, sy, sp.z); player.mode = data.mode;
-  if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
-  if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
-  hudEl.classList.remove('hidden');
-  setTimeout(() => { loading = false; inGame = true; showScreen(null); requestPointer(); refreshBars(); refreshHotbar(); chat('[MP] Ready!'); }, 1000);
-  } catch(e) { console.error(e); }
-}
-
-function applyWorldData(data){
-  if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
-  try {
-  chat('[MP] Generating world from seed '+data.seed+'...');
-  world = new World(data.seed);
-  world.time = data.time||6000;
-  world.day = data.day||1;
+  world = new World(data.seed); world.time = data.time||6000; world.day = data.day||1;
   const sp=data.spawn||{x:0,y:64,z:0};
   const R=Math.min(S.renderDistance, 6);
   for(let dz=-R;dz<=R;dz++) for(let dx=-R;dx<=R;dx++){
-    const cx=Math.floor(sp.x/CS)+dx;
-    const cz=Math.floor(sp.z/CS)+dz;
+    const cx=Math.floor(sp.x/CS)+dx; const cz=Math.floor(sp.z/CS)+dz;
     if(!world.getChunk(cx,cz)) world.generate(cx,cz);
   }
   for(const k in data.mods){
     const a=data.mods[k]; const [cx2,cz2]=k.split(',').map(Number);
     for(let i=0;i<a.length;i+=2){
-      const idx=a[i], bid=a[i+1];
-      const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
+      const idx=a[i], bid=a[i+1]; const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
       world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
     }
   }
@@ -5053,17 +5030,10 @@ function applyWorldData(data){
     if(n0&&n1&&n2&&n3) ChunkMgr.mesh(world,ch);
   }
   let sy=sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+10);y>=0;y--){ if(world.getBlockSafe(Math.floor(sp.x),y,Math.floor(sp.z))!==0){ sy=y+1; break; } }
-  player = new Player(world, sp.x, sy, sp.z);
-  player.mode=data.mode||'survival';
-  player.spawn=[sp.x,sy,sp.z];
-  if(player.mode==='creative'){
-    player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1));
-    player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64));
-  }
+  player = new Player(world, sp.x, sy, sp.z); player.mode=data.mode||'survival'; player.spawn=[sp.x,sy,sp.z];
+  if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
   if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
-  hudEl.classList.remove('hidden');
-  loading = false; inGame = true; showScreen(null); requestPointer();
-  refreshBars(); refreshHotbar();
+  hudEl.classList.remove('hidden'); loading = false; inGame = true; showScreen(null); requestPointer(); refreshBars(); refreshHotbar();
   setTimeout(() => { chat('[MP] World Loaded! Ready!'); }, 100);
   } catch(e) { console.error(e); chat('[MP] Load Error'); }
 }
@@ -5312,7 +5282,7 @@ async function mpJoinByCode(code){
   const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}});
   conn.on('open',()=>{
     MP.connected=true;
-    chat('[MP] '+t('mp.connected')+' — requesting world...');
+    chat('[MP] '+t('mp.connected')+' вЂ” requesting world...');
     // Request world data from host
     try{ conn.send({t:'requestWorld'}); }catch(e){}
   });
@@ -5336,218 +5306,6 @@ async function mpJoinByCode(code){
     }
   }, 6000);
 }
-
-/* ------------------------------------------------------------------ *
- * 30b. MULTIPLAYER — FINAL STABLE ENGINE                             *
- * ------------------------------------------------------------------ */
-const MP = {
-  enabled:false, isHost:false, connected:false, peer:null, myId:null, code:null,
-  peers:new Map(), nick:'Player', hostNick:'Host', _posTimer:0, _syncTimer:0
-};
-
-function genRoomCode(){
-  const letters='ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const r=()=>letters[Math.floor(Math.random()*letters.length)];
-  const d=()=>Math.floor(Math.random()*10);
-  return r()+r()+d()+r()+d()+r();
-}
-
-function mpLoadNick(){
-  const saved=Store.get('larpcraft.mpnick','');
-  if(saved && /^[a-zA-Z0-9]{3,16}$/.test(saved)) MP.nick=saved;
-  else MP.nick='Player'+Math.floor(Math.random()*999);
-}
-function mpSaveNick(nick){ MP.nick=nick; Store.set('larpcraft.mpnick', nick); }
-
-function mpInit() {
-  if (MP.peer) return;
-  MP.myId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
-  MP.peer = new Peer(MP.myId, { debug: 1 });
-  MP.peer.on('connection', conn => { if (!MP.isHost) conn.close(); else setupHostConnection(conn); });
-}
-
-function mpStartHost() {
-  MP.code = genRoomCode();
-  if (MP.peer) { try { MP.peer.destroy(); } catch(e) {} MP.peer = null; }
-  MP.isHost = true; MP.enabled = true;
-  MP.peer = new Peer('lpc-' + MP.code, { debug: 1 });
-  MP.peer.on('open', () => { MP.connected = true; chat('[MP] Server Started! CODE: ' + MP.code); refreshPauseMultiplayerUI(); });
-  MP.peer.on('connection', conn => setupHostConnection(conn));
-  MP.peer.on('error', err => { if (err.type === 'unavailable-id') setTimeout(mpStartHost, 1000); });
-}
-
-async function mpJoinByCode(code) {
-  if (MP.peer) { try { MP.peer.destroy(); } catch(e) {} MP.peer = null; }
-  const myTempId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
-  MP.peer = new Peer(myTempId, { debug: 1 });
-  MP.peer.on('open', () => {
-    MP.myId = myTempId; MP.isHost = false; MP.enabled = true; MP.code = code;
-    chat('[MP] Connecting to ' + code + '...');
-    const conn = MP.peer.connect('lpc-' + code, { metadata: { nick: MP.nick }, reliable: true });
-    setupClientConnection(conn);
-    setTimeout(() => { if (!MP.connected) { chat('[MP] Connection Failed'); mpStop(); } }, 10000);
-  });
-}
-
-function mpStop(){
-  if (MP.peer){ for(const [id,p] of MP.peers) p.conn.close(); MP.peers.clear(); try{MP.peer.destroy();}catch(e){} MP.peer=null; }
-  MP.enabled=false; MP.isHost=false; MP.connected=false; removeRemotePlayers(); chat('[MP] Stopped');
-}
-
-function setupHostConnection(conn) {
-  const pid = conn.peer;
-  conn.on('open', () => {
-    const nick = (conn.metadata && conn.metadata.nick) || 'Player';
-    MP.peers.set(pid, { conn, nick, pos: { x: 0, y: 0, z: 0 }, yaw: 0 });
-    chat('[MP] ' + nick + ' joined');
-    conn.send({ t: 'welcome', seed: world.seed, time: world.time, hostNick: MP.nick, mode: player.mode, spawn: { x: player.x, y: player.y, z: player.z } });
-    const mods = {}; for (const [k, m] of world.modified) { const a = []; for (const [i, v] of m) a.push(i, v); mods[k] = a; }
-    conn.send({ t: 'worldMods', mods });
-    world.entities.forEach(e => { if (e instanceof ItemEntity) conn.send({ t: 'spawnItem', x: e.x, y: e.y, z: e.z, id: e.stack.id, count: e.stack.count, eid: e.id }); });
-  });
-  conn.on('data', data => handleHostMessage(pid, data));
-  conn.on('close', () => { const p = MP.peers.get(pid); if (p) chat('[MP] ' + p.nick + ' left'); MP.peers.delete(pid); removeRemotePlayer(pid); });
-}
-
-function setupClientConnection(conn) {
-  conn.on('open', () => { MP.connected = true; MP.peers.set('host', { conn, nick: 'Host' }); });
-  conn.on('data', data => handleClientMessage(data));
-  conn.on('close', () => { MP.connected = false; exitToMenu(); });
-}
-
-function handleHostMessage(pid, data) {
-  const p = MP.peers.get(pid); if (!p) return;
-  switch (data.t) {
-    case 'pos': p.pos = data.pos; p.yaw = data.yaw; updateRemotePlayer(pid, data); broadcast({ t: 'playerPos', pid, pos: data.pos, yaw: data.yaw, nick: p.nick }, pid); break;
-    case 'chat': broadcast({ t: 'chat', msg: data.msg, nick: p.nick }); chat('<'+p.nick+'> '+data.msg); break;
-    case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); broadcast(data, pid); break;
-    case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); broadcast(data, pid); break;
-    case 'dropItem': const eid = Math.random().toString(36).substr(2,9); dropStack(world, data.x, data.y, data.z, stackOf(data.id, data.count), eid); broadcast({ t: 'spawnItem', ...data, eid }, pid); break;
-    case 'pickupItem': removeRemoteEntity(data.eid); broadcast({ t: 'removeItem', eid: data.eid }); break;
-    case 'pvpHit': 
-       if (data.to === 'host') { player.damage(data.dmg); chat('[PVP] Hit by ' + p.nick); }
-       else { const target = MP.peers.get(data.to); if (target) target.conn.send({t:'pvpHit', dmg: data.dmg, from: p.nick}); }
-       break;
-  }
-}
-
-function handleClientMessage(data) {
-  switch (data.t) {
-    case 'welcome': MP.hostNick = data.hostNick; initClientWorld(data); break;
-    case 'worldMods': applyOnlyMods(data.mods); break;
-    case 'playerPos': updateRemotePlayer(data.pid, data); break;
-    case 'spawnItem': spawnRemoteItem(data); break;
-    case 'removeItem': removeRemoteEntity(data.eid); break;
-    case 'chat': chat('<' + data.nick + '> ' + data.msg); break;
-    case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); break;
-    case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); break;
-    case 'pvpHit': player.damage(data.dmg); chat('[PVP] Hit by ' + data.from); break;
-  }
-}
-
-function initClientWorld(data) {
-  loading = true; menuMode = false; inGame = false;
-  chat('[MP] Preparing world...');
-  world = new World(data.seed); world.time = data.time;
-  const sp = data.spawn;
-  for (let dz = -5; dz <= 5; dz++) for (let dx = -5; dx <= 5; dx++) world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
-  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; ChunkMgr.mesh(world, ch); }
-  let sy = sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) { if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; } }
-  player = new Player(world, sp.x, sy, sp.z); player.mode = data.mode;
-  if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
-  if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
-  hudEl.classList.remove('hidden');
-  setTimeout(() => { loading = false; inGame = true; showScreen(null); requestPointer(); refreshBars(); refreshHotbar(); chat('[MP] Ready!'); }, 1000);
-}
-
-function applyOnlyMods(mods) {
-  for (const k in mods) {
-    const a = mods[k]; const [cx, cz] = k.split(',').map(Number);
-    for (let i = 0; i < a.length; i += 2) {
-      const idx = a[i], bid = a[i+1];
-      const y = (idx/256)|0, r=idx-y*256, z=(r/16)|0, x=r-z*16;
-      world.setBlock(cx*16+x, y, cz*16+z, bid, false);
-    }
-  }
-}
-
-function broadcast(data, exclude) { for (const [pid, p] of MP.peers) { if (pid !== exclude && p.conn && p.conn.open) p.conn.send(data); } }
-
-function mpTick(dt) {
-  if (!MP.connected || !player) return;
-  MP._posTimer += dt;
-  if (MP._posTimer > 0.05) {
-    MP._posTimer = 0;
-    const pos = { x: player.x, y: player.y, z: player.z };
-    if (MP.isHost) broadcast({ t: 'playerPos', pid: 'host', pos, yaw: player.yaw, nick: MP.nick });
-    else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({ t: 'pos', pos, yaw: player.yaw }); }
-  }
-}
-
-function mpSendChat(msg) {
-  if (MP.isHost) { chat('<' + MP.nick + '> ' + msg); broadcast({ t: 'chat', msg, nick: MP.nick }); }
-  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({ t: 'chat', msg }); }
-}
-
-function mpSendBlockBreak(x, y, z) {
-  const msg = { t: 'blockBreak', x, y, z };
-  if (MP.isHost) broadcast(msg);
-  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send(msg); }
-}
-
-function mpSendBlockPlace(x, y, z, id) {
-  const msg = { t: 'blockPlace', x, y, z, id };
-  if (MP.isHost) broadcast(msg);
-  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send(msg); }
-}
-
-function mpAttackRemote() {
-  if (player.mode !== 'survival') return;
-  const d = new THREE.Vector3(); camera.getWorldDirection(d);
-  for (const [pid, rp] of Object.entries(remotePlayers)) {
-    const dist = Math.hypot(rp.group.position.x - camera.position.x, rp.group.position.y + 0.9 - camera.position.y, rp.group.position.z - camera.position.z);
-    if (dist > 4) continue;
-    const dir = new THREE.Vector3().subVectors(rp.group.position, camera.position).normalize();
-    if (dir.dot(d) < 0.8) continue;
-    const dmg = 2;
-    if (MP.isHost) { const t = MP.peers.get(pid); if (t && t.conn && t.conn.open) t.conn.send({t:'pvpHit', dmg, from: MP.nick}); }
-    else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({t:'pvpHit', to: pid, dmg, from: MP.nick}); }
-  }
-}
-
-function isNickTaken(n){ for(const [,p] of MP.peers) if(p.nick===n) return true; return false; }
-function spawnRemoteItem(d){ const it=new ItemEntity(world,d.x,d.y,d.z,stackOf(d.id,d.count)); it.id=d.eid; world.entities.push(it); }
-function removeRemoteEntity(eid){ const idx=world.entities.findIndex(e=>e.id===eid); if(idx>=0){ const e=world.entities[idx]; if(e.obj){entityGroup.remove(e.obj);disposeObj(e.obj);} world.entities.splice(idx,1); } }
-
-/* ---- Remote Player Rendering ---- */
-const remotePlayers={};
-function spawnRemotePlayer(pid, nick){
-  if(remotePlayers[pid]) return;
-  const group=new THREE.Group(); const black=new THREE.MeshLambertMaterial({color:0x000000});
-  const head=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), black); head.position.y=1.6; group.add(head);
-  const body=new THREE.Mesh(new THREE.BoxGeometry(0.8,1.2,0.4), black); body.position.y=0.6; group.add(body);
-  const limbs=[{x:-0.525,y:0.6},{x:0.525,y:0.6},{x:-0.1875,y:0},{x:0.1875,y:0}];
-  const m=[]; limbs.forEach(l=>{ const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.25,1.2,0.25),black); mesh.position.set(l.x,l.y,0); group.add(mesh); m.push(mesh); });
-  const nameDiv=document.createElement('div'); nameDiv.className='mp-nametag'; nameDiv.innerHTML='<span>'+nick+'</span>';
-  document.body.appendChild(nameDiv); scene.add(group);
-  remotePlayers[pid]={group, nameDiv, targetPos:new THREE.Vector3(), targetYaw:0, armL:m[0], armR:m[1], legL:m[2], legR:m[3]};
-}
-function updateRemotePlayer(pid, data){ if(!remotePlayers[pid]) spawnRemotePlayer(pid, data.nick||'?'); const rp=remotePlayers[pid]; rp.targetPos.set(data.pos.x, data.pos.y, data.pos.z); rp.targetYaw=data.yaw||0; }
-function updateRemotePlayersVisual(dt){
-  for(const [pid,rp] of Object.entries(remotePlayers)){
-    const prev=rp.group.position.clone(); rp.group.position.lerp(rp.targetPos, 0.2); rp.group.rotation.y=rp.targetYaw;
-    if(rp.group.position.distanceTo(prev)>0.001){
-      const t=performance.now()*0.008, s=Math.sin(t*6)*0.5;
-      rp.legL.rotation.x=s; rp.legR.rotation.x=-s; rp.armL.rotation.x=-s; rp.armR.rotation.x=s;
-    }
-    const pos=rp.group.position.clone(); pos.y+=2.2; pos.project(camera);
-    const x=(pos.x*0.5+0.5)*window.innerWidth; const y=(-(pos.y*0.5)+0.5)*window.innerHeight;
-    rp.nameDiv.style.left=x+'px'; rp.nameDiv.style.top=y+'px';
-    rp.nameDiv.style.display=(pos.z<1 && inGame)?'block':'none';
-  }
-}
-function removeRemotePlayer(pid){ const rp=remotePlayers[pid]; if(!rp) return; scene.remove(rp.group); if(rp.nameDiv.parentNode) rp.nameDiv.parentNode.removeChild(rp.nameDiv); delete remotePlayers[pid]; }
-function removeRemotePlayers(){ for(const pid in remotePlayers) removeRemotePlayer(pid); }
 
 /* ------------------------------------------------------------------ *
  * 31. MAIN LOOP                                                        *

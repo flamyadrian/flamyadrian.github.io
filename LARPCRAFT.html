@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>LARPCRAFT</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;
@@ -149,6 +150,30 @@ canvas#gl{position:fixed;left:0;top:0;width:100%;height:100%;display:block;z-ind
 .tabs{display:flex;gap:4px;margin-bottom:6px}
 .tabs .btn{width:auto;min-width:120px;min-height:32px;font-size:14px}
 .tabs .btn.on{background:#8391aa;color:#ffffa0}
+
+/* ---- multiplayer UI ---- */
+.mp-section{background:rgba(0,0,0,.55);border:2px solid #333;padding:12px;margin-top:8px;width:400px;max-width:92vw}
+.mp-section h4{font-size:14px;color:#aaa;text-shadow:1px 1px 0 #000a;margin:0 0 8px;text-align:center}
+.mp-code{font-size:28px;font-weight:700;letter-spacing:6px;text-align:center;padding:10px;
+  background:#111;border:2px solid #555;color:#4f4;font-family:Consolas,monospace;user-select:all;
+  cursor:pointer;margin-bottom:8px;word-break:break-all}
+.mp-code:hover{border-color:#7f7}
+.mp-code .copied{color:#ff0;font-size:12px;letter-spacing:0;display:block;margin-top:2px}
+.mp-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.mp-row input{flex:1;height:30px;background:#000;color:#e0e0e0;border:2px solid #666;
+  padding:0 6px;font-family:inherit;font-size:13px;outline:none}
+.mp-row input:focus{border-color:#fff}
+.mp-players{max-height:140px;overflow-y:auto;background:rgba(0,0,0,.4);border:1px solid #333;
+  padding:4px;margin-top:4px}
+.mp-players div{padding:2px 4px;font-size:13px;color:#ccc;text-shadow:1px 1px 0 #000a}
+.mp-players div .host-badge{color:#fd0;font-size:11px;margin-left:4px}
+.mp-status{font-size:12px;color:#8f8;text-align:center;margin-top:4px}
+.mp-status.off{color:#f88}
+.mp-nametag{position:absolute;pointer-events:none;z-index:5;text-align:center;transform:translate(-50%,-100%)}
+.mp-nametag span{background:rgba(0,0,0,.55);padding:1px 5px;font-size:12px;color:#fff;
+  text-shadow:1px 1px 0 #000a;white-space:nowrap;border-radius:2px}
+.mp-nametag .hp-bar{width:40px;height:4px;background:#333;margin:2px auto 0;border-radius:2px;overflow:hidden}
+.mp-nametag .hp-bar i{display:block;height:100%;background:#e44;transition:width .2s}
 </style>
 </head>
 <body>
@@ -320,6 +345,33 @@ const STR = {
   'msg.autosave'           : ['Autosaved','Автосохранение'],
   'msg.webglFail'          : ['WebGL 2 is not available in this browser.','WebGL 2 недоступен в этом браузере.'],
   'msg.day'                : ['Day %s','День %s'],
+
+  'mp.title'               : ['Multiplayer','Сетевая игра'],
+  'mp.host'                : ['Host Server','Создать сервер'],
+  'mp.join'                : ['Join Server','Подключиться'],
+  'mp.enable'              : ['Enable Multiplayer','Включить мультиплеер'],
+  'mp.disable'             : ['Disable Multiplayer','Выключить мультиплеер'],
+  'mp.code'                : ['Server Code','Код сервера'],
+  'mp.codeHint'            : ['Enter code (XX0X0X)','Введите код (XX0X0X)'],
+  'mp.connect'             : ['Connect','Подключиться'],
+  'mp.disconnect'          : ['Disconnect','Отключиться'],
+  'mp.players'             : ['Players','Игроки'],
+  'mp.youAreHost'          : ['You are the host','Вы — создатель сервера'],
+  'mp.connected'           : ['Connected!','Подключено!'],
+  'mp.disconnected'        : ['Disconnected','Отключено'],
+  'mp.playerJoined'        : ['%s joined the server','%s зашёл на сервер'],
+  'mp.playerLeft'          : ['%s left the server','%s вышел с сервера'],
+  'mp.name'                : ['Nickname','Никнейм'],
+  'mp.nameHint'            : ['Letters and digits, 3-16 chars','Буквы и цифры, 3-16 символов'],
+  'mp.nameTaken'           : ['Name already taken!','Ник уже занят!'],
+  'mp.nameInvalid'         : ['Invalid name!','Некорректный ник!'],
+  'mp.creative'            : ['Creative Mode','Творческий режим'],
+  'mp.survival'            : ['Survival Mode','Режим выживания'],
+  'mp.gmChanged'           : ['%s switched to %s','%s переключился на %s'],
+  'mp.hostOnly'            : ['Only the host can use commands','Только создатель может использовать команды'],
+  'mp.waitingForWorld'     : ['Waiting for world data...','Ожидание данных мира...'],
+  'mp.copyCode'            : ['Copy Code','Скопировать код'],
+  'mp.copied'              : ['Copied!','Скопировано!'],
 };
 
 const SPLASHES = {
@@ -2995,20 +3047,20 @@ function damageTool(p, amount){
 }
 function dropStack(world,x,y,z,st){ if(st&&st.count>0) world.entities.push(new ItemEntity(world,x,y,z,st)); }
 
-function breakBlock(world,p,x,y,z){
+function breakBlock(world,p,x,y,z,remote){
   const id=world.getBlock(x,y,z);
   if (id<=0) return;
   const def=BLOCKS[id];
   if (def.hardness<0) return;
-  const item=p.held();
+  const item=p? p.held() : null;
   world.setBlock(x,y,z,0);
   if (id===31||id===33||id===34) world.tiles.delete(x+','+y+','+z);
   spawnBlockParticles(x,y,z,id,14);
   Sfx.dig(id);
-  if (p.mode!=='creative'){
+  if(!remote && p && p.mode!=='creative'){
     if (canHarvest(def,item)){
       let drop=def.drop, count=def.dropCount||1;
-      if (drop===-1){ // leaves
+      if (drop===-1){
         drop = Math.random()<0.05 ? 106 : (Math.random()<0.06? (id===20?20:18) : 0);
         count=1;
       }
@@ -3017,6 +3069,8 @@ function breakBlock(world,p,x,y,z){
     damageTool(p,1);
     p.exhaust=(p.exhaust||0)+0.025;
     p.score+=1;
+    // sync multiplayer
+    mpSendBlockBreak(x,y,z);
   }
   // gravity blocks
   fallCheck(world,x,y+1,z);
@@ -3035,42 +3089,46 @@ function fallCheck(world,x,y,z){
 }
 function updateLitFurnaceNeighbors(){ /* placeholder for future block updates */ }
 
-function placeBlock(world,p,hit){
-  const st=p.held(); if(!st) return false;
+function placeBlock(world,p,hit,remote){
+  const st=p? p.held() : null; if(!st) return false;
   const d=itemDef(st.id);
   if (!d) return false;
   // buckets
-  if (st.id===122){ // empty bucket
+  if (st.id===122){
     const f=world.getBlock(hit.x,hit.y,hit.z);
     if (f===7||f===8){ world.setBlock(hit.x,hit.y,hit.z,0);
-      p.inv.set(p.sel, stackOf(f===7?123:124,1)); Sfx.place(f); refreshHotbar(); return true; }
+      if(!remote && p) p.inv.set(p.sel, stackOf(f===7?123:124,1)); Sfx.place(f); refreshHotbar();
+      if(!remote) mpSendBlockPlace(hit.x,hit.y,hit.z,0);
+      return true; }
     return false;
   }
   if (st.id===123||st.id===124){
     const bx=hit.x+hit.face[0], by=hit.y+hit.face[1], bz=hit.z+hit.face[2];
     if (world.getBlockSafe(bx,by,bz)===0 || BLOCKS[world.getBlockSafe(bx,by,bz)].replaceable){
       world.setBlock(bx,by,bz, st.id===123?7:8);
-      if (p.mode!=='creative') p.inv.set(p.sel, stackOf(122,1));
-      Sfx.place(7); refreshHotbar(); return true;
+      if(!remote && p && p.mode!=='creative') p.inv.set(p.sel, stackOf(122,1));
+      Sfx.place(7); refreshHotbar();
+      if(!remote) mpSendBlockPlace(bx,by,bz,st.id===123?7:8);
+      return true;
     }
     return false;
   }
-  if (d.food && p.mode==='survival'){ return false; }
+  if (d.food && p && p.mode==='survival'){ return false; }
   if (d.block==null) return false;
   const bx=hit.x+hit.face[0], by=hit.y+hit.face[1], bz=hit.z+hit.face[2];
   if (by<0||by>=CH) return false;
   const cur=world.getBlockSafe(bx,by,bz);
   if (cur!==0 && !BLOCKS[cur].replaceable) return false;
-  // don't place inside the player
-  const bb=p.aabb();
-  if (BLOCKS[d.block].solid &&
-      bb[0]<bx+1 && bb[3]>bx && bb[1]<by+1 && bb[4]>by && bb[2]<bz+1 && bb[5]>bz) return false;
+  if(p){
+    const bb=p.aabb();
+    if (BLOCKS[d.block].solid &&
+        bb[0]<bx+1 && bb[3]>bx && bb[1]<by+1 && bb[4]>by && bb[2]<bz+1 && bb[5]>bz) return false;
+  }
   for (const e of world.entities){
     if (!(e instanceof MobEntity)||e.dead) continue;
     const eb=e.aabb();
     if (BLOCKS[d.block].solid && eb[0]<bx+1&&eb[3]>bx&&eb[1]<by+1&&eb[4]>by&&eb[2]<bz+1&&eb[5]>bz) return false;
   }
-  // torches need support
   if (d.block===30 && !isSolid(world.getBlockSafe(bx,by-1,bz))) return false;
   let id=d.block;
   if (id===33) id=33;
@@ -3078,8 +3136,9 @@ function placeBlock(world,p,hit){
   if (id===31) world.tiles.set(bx+','+by+','+bz,{type:'chest',inv:new Array(27).fill(0)});
   if (id===33) world.tiles.set(bx+','+by+','+bz,{type:'furnace',input:0,fuel:0,out:0,burn:0,burnMax:0,cook:0});
   Sfx.place(id);
-  if (p.mode!=='creative'){ p.inv.removeOne(p.sel); }
+  if(!remote && p && p.mode!=='creative'){ p.inv.removeOne(p.sel); }
   refreshHotbar();
+  if(!remote) mpSendBlockPlace(bx,by,bz,id);
   return true;
 }
 
@@ -3944,6 +4003,10 @@ function attackTick(dt){
       player.exhaust=(player.exhaust||0)+0.1;
       return;
     }
+    // PVP against remote players
+    if(MP.enabled && MP.connected && player.mode==='survival'){
+      mpAttackRemote();
+    }
   }
   // otherwise mine
   const hit=currentHit();
@@ -4008,24 +4071,35 @@ function closeChat(){
   if (inGame&&!paused&&!Gui.open) requestPointer();
 }
 function runCommand(v){
-  if (v[0]!=='/'){ chat('<You> '+v); return; }
+  if (v[0]!=='/'){
+    if(MP.enabled&&MP.connected){
+      mpSendChat(v);
+    } else {
+      chat('<You> '+v);
+    }
+    return;
+  }
   const a=v.slice(1).split(/\s+/);
   const c=a[0].toLowerCase();
   if (c==='help'){ chat(t('chat.help')); }
   else if (c==='seed'){ chat(t('chat.seed', world.seed)); }
   else if (c==='gamemode'||c==='gm'){
+    if(MP.enabled&&MP.connected&&!MP.isHost){ chat(t('mp.hostOnly')); return; }
     const m=(a[1]||'').toLowerCase();
     const nm = (m==='1'||m==='c'||m==='creative')?'creative':'survival';
     player.mode=nm; player.flying=false;
     chat(t('chat.gamemode', t(nm==='creative'?'gameMode.creative':'gameMode.survival')));
+    if(MP.enabled&&MP.isHost) mpSendGameMode(nm);
     refreshBars();
   }
   else if (c==='time'){
+    if(MP.enabled&&MP.connected&&!MP.isHost){ chat(t('mp.hostOnly')); return; }
     const s=(a[1]||'').toLowerCase();
     let v2 = s==='day'?1000 : (s==='night'?13000 : (s==='noon'?6000 : (s==='midnight'?18000 : parseInt(a[2]||a[1],10))));
     if (!isNaN(v2)){ world.time=((v2%24000)+24000)%24000; chat(t('chat.time', Math.round(world.time))); }
   }
   else if (c==='give'){
+    if(MP.enabled&&MP.connected&&!MP.isHost){ chat(t('mp.hostOnly')); return; }
     const key=(a[1]||'').toLowerCase();
     let id=null;
     for(const k in ITEMS){ if(ITEMS[k].key===key){ id=+k; break; } }
@@ -4036,6 +4110,7 @@ function runCommand(v){
     else chat(t('chat.unknown'));
   }
   else if (c==='tp'){
+    if(MP.enabled&&MP.connected&&!MP.isHost){ chat(t('mp.hostOnly')); return; }
     const x=parseFloat(a[1]), y=parseFloat(a[2]), z=parseFloat(a[3]);
     if (!isNaN(x)&&!isNaN(y)&&!isNaN(z)){ player.x=x; player.y=y; player.z=z; player.vy=0;
       chat(t('chat.tp', x.toFixed(0)+' '+y.toFixed(0)+' '+z.toFixed(0))); }
@@ -4043,6 +4118,20 @@ function runCommand(v){
   else if (c==='kill'){ player.damage(1000); }
   else if (c==='clear'){ for(let i=0;i<INV_SIZE;i++) player.inv.set(i,null); refreshHotbar(); chat(t('chat.cleared')); }
   else if (c==='save'){ saveWorld(meta); }
+  else if (c==='nick'||c==='name'){
+    const nick=(a[1]||'').trim();
+    if(/^[a-zA-Z0-9]{3,16}$/.test(nick)){
+      if(MP.enabled&&MP.connected){
+        if(MP.isHost||!isNickTaken(nick)){
+          mpSaveNick(nick);
+          chat('Nickname set to: '+nick);
+        } else { chat(t('mp.nameTaken')); }
+      } else {
+        mpSaveNick(nick);
+        chat('Nickname set to: '+nick);
+      }
+    } else { chat(t('mp.nameInvalid')); }
+  }
   else chat(t('chat.unknown'));
 }
 
@@ -4311,10 +4400,88 @@ function screenPause(){
   box.appendChild(btn(t('menu.returnToGame'), ()=> togglePause()));
   box.appendChild(btn(t('options.title'), ()=> showScreen(screenOptions(true))));
   box.appendChild(btn(t('keys.title'), ()=> showScreen(screenKeys(true))));
-  box.appendChild(btn(t('menu.returnToMenu'), ()=>{ saveWorld(meta,true); exitToMenu(); }));
+  // multiplayer section
+  const mpDiv=el('div','mp-section'); mpDiv.id='mpSection';
+  if(!MP.enabled){
+    mpDiv.innerHTML='<h4>'+t('mp.title')+'</h4>'+
+      '<div class="wrapc" style="gap:6px">'+
+      '<div class="mp-row"><input type="text" id="mpNickInput" value="'+MP.nick+'" placeholder="'+t('mp.nameHint')+'" maxlength="16" style="text-transform:none"></div>'+
+      '<button class="btn" id="mpHostBtn" style="width:100%">'+t('mp.host')+'</button>'+
+      '<div style="display:flex;gap:4px;width:100%">'+
+      '<input type="text" id="mpCodeInput" placeholder="'+t('mp.codeHint')+'" maxlength="6" style="flex:1;height:30px;background:#000;color:#e0e0e0;border:2px solid #666;padding:0 6px;font-family:inherit;font-size:13px;text-transform:uppercase;letter-spacing:2px;text-align:center">'+
+      '<button class="btn tiny" id="mpJoinBtn">'+t('mp.connect')+'</button>'+
+      '</div>'+
+      '<div class="mp-status off" id="mpStatus">'+t('menu.disabled')+'</div>'+
+      '</div>';
+  } else {
+    const codeDisplay=MP.code?MP.code:'---';
+    const playersHTML=[];
+    playersHTML.push('<div><b>'+MP.nick+'</b> (You) '+(MP.isHost?'<span class="host-badge">★ HOST</span>':'')+'</div>');
+    for(const [pid,p] of MP.peers){
+      playersHTML.push('<div>'+p.nick+(p.mode==='creative'?' ✦':'')+'</div>');
+    }
+    mpDiv.innerHTML='<h4>'+t('mp.title')+'</h4>'+
+      (MP.isHost?
+        '<div class="mp-code" id="mpCodeCopy" title="Click to copy">'+codeDisplay+'</div>':
+        '<div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:4px">'+t('mp.code')+': '+codeDisplay+'</div>')+
+      '<div class="mp-players" id="mpPlayerList">'+playersHTML.join('')+'</div>'+
+      (MP.isHost?
+        '<div class="wrapc" style="gap:4px;margin-top:6px">'+
+        '<button class="btn tiny" id="mpToggleGM">'+(player&&player.mode==='creative'?t('mp.survival'):t('mp.creative'))+'</button>'+
+        '<div class="mp-status" id="mpStatus">'+t('mp.youAreHost')+' — '+MP.peers.size+' '+t('mp.players').toLowerCase()+'</div>'+
+        '</div>':
+        '<div class="mp-status" id="mpStatus">'+t('mp.connected')+'</div>')+
+      '<button class="btn tiny" id="mpDisconnectBtn" style="margin-top:6px;width:100%">'+t('mp.disconnect')+'</button>';
+  }
+  box.appendChild(mpDiv);
+  box.appendChild(btn(t('menu.returnToMenu'), ()=>{ saveWorld(meta,true); mpStop(); exitToMenu(); }));
   s.appendChild(box);
+  // attach events after DOM insert
+  setTimeout(()=>{
+    const ni=document.getElementById('mpNickInput');
+    if(ni) ni.onchange=()=>{ const v=ni.value.trim(); if(/^[a-zA-Z0-9]{3,16}$/.test(v)) mpSaveNick(v); };
+    const hb=document.getElementById('mpHostBtn');
+    if(hb) hb.onclick=()=>{ 
+      const ni=document.getElementById('mpNickInput');
+      if(ni){ const v=ni.value.trim(); if(/^[a-zA-Z0-9]{3,16}$/.test(v)) mpSaveNick(v); }
+      mpStartHost(); 
+    };
+    const jb=document.getElementById('mpJoinBtn');
+    const ci=document.getElementById('mpCodeInput');
+    if(jb&&ci) jb.onclick=()=>{
+      const code=ci.value.trim().toUpperCase();
+      if(code.length===6){ mpJoinByCode(code); refreshPauseMultiplayerUI(); }
+    };
+    const cc=document.getElementById('mpCodeCopy');
+    if(cc) cc.onclick=()=>{
+      navigator.clipboard.writeText(MP.code).then(()=>{
+        const old=cc.querySelector('.copied');
+        if(!old){const sp=document.createElement('span');sp.className='copied';sp.textContent=t('mp.copied');cc.appendChild(sp);setTimeout(()=>sp.remove(),1500);}
+      });
+    };
+    const db=document.getElementById('mpDisconnectBtn');
+    if(db) db.onclick=()=>{ mpStop(); refreshPauseMultiplayerUI(); };
+    const tg=document.getElementById('mpToggleGM');
+    if(tg) tg.onclick=()=>{
+      if(!MP.isHost) return;
+      const newMode=player.mode==='creative'?'survival':'creative';
+      player.mode=newMode; player.flying=false; refreshBars();
+      mpSendGameMode(newMode);
+      refreshPauseMultiplayerUI();
+    };
+  },20);
   return s;
 }
+
+function refreshPauseMultiplayerUI(){
+  if(!currentScreen) return;
+  const old=document.getElementById('mpSection');
+  if(!old) return;
+  const np=screenPause();
+  // Replace mpSection only
+  old.replaceWith(np.querySelector('#mpSection'));
+}
+
 function screenDeath(){
   const s=el('div','screen');
   s.style.background='rgba(120,0,0,.45)';
@@ -4322,7 +4489,7 @@ function screenDeath(){
   const h=el('div','ttl',t('death.title')); h.style.fontSize='52px'; box.appendChild(h);
   box.appendChild(el('div','sub',t('death.score', player?player.score:0)));
   box.appendChild(btn(t('death.respawn'), ()=>{ player.respawn(); showScreen(null); refreshBars(); refreshHotbar(); requestPointer(); }));
-  box.appendChild(btn(t('gui.toTitle'), ()=>{ saveWorld(meta,true); exitToMenu(); }));
+  box.appendChild(btn(t('gui.toTitle'), ()=>{ saveWorld(meta,true); mpStop(); exitToMenu(); }));
   s.appendChild(box);
   return s;
 }
@@ -4567,6 +4734,542 @@ const Music = {
 };
 
 /* ------------------------------------------------------------------ *
+ * 30b. MULTIPLAYER — WebRTC PeerJS                                    *
+ * ------------------------------------------------------------------ */
+const MP = {
+  enabled:false, isHost:false, connected:false,
+  peer:null, myId:null, code:null,
+  peers:new Map(),          // peerId -> {conn, nick, pos, yaw, health, mode, lastTick}
+  nick:'Player',
+  _sendQueue:[],
+  _posTimer:0,
+  _cleanupTimer:0,
+  hostNick:'Host',
+};
+
+function genRoomCode(){
+  const letters='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const r=()=>letters[Math.floor(Math.random()*letters.length)];
+  const d=()=>Math.floor(Math.random()*10);
+  return r()+r()+d()+r()+d()+r();
+}
+
+function mpLoadNick(){
+  const saved=Store.get('larpcraft.mpnick','');
+  if(saved && /^[a-zA-Z0-9]{3,16}$/.test(saved)) MP.nick=saved;
+  else MP.nick='Player'+Math.floor(Math.random()*999);
+}
+function mpSaveNick(nick){
+  MP.nick=nick;
+  Store.set('larpcraft.mpnick', nick);
+}
+
+function mpInit(){
+  if (MP.peer) return;
+  const id='lpc-'+genRoomCode()+'-'+Date.now().toString(36);
+  MP.peer=new Peer(id);
+  MP.peer.on('open', myId=>{
+    MP.myId=myId;
+    chat('[MP] PeerJS ready');
+  });
+  MP.peer.on('connection', conn=>{
+    if (!MP.isHost){ conn.close(); return; }
+    handleHostIncoming(conn);
+  });
+  MP.peer.on('error', e=>{
+    chat('[MP] Error: '+e.type);
+  });
+}
+
+function mpStartHost(){
+  MP.code=genRoomCode();
+  // Destroy old peer if exists
+  if(MP.peer){ try{MP.peer.destroy();}catch(e){} MP.peer=null; }
+  // Create peer with room code as ID so clients can connect
+  MP.peer=new Peer('lpc-'+MP.code);
+  MP.peer.on('open', myId=>{
+    MP.myId=myId;
+    MP.isHost=true; MP.enabled=true; MP.connected=true;
+    MP.peers.clear();
+    chat('[MP] '+t('mp.youAreHost')+' — '+t('mp.code')+': '+MP.code);
+    refreshPauseMultiplayerUI();
+  });
+  MP.peer.on('connection', conn=>{
+    if (!MP.isHost){ conn.close(); return; }
+    handleHostIncoming(conn);
+  });
+  MP.peer.on('error', e=>{
+    chat('[MP] Error: '+e.type);
+  });
+}
+
+function mpStop(){
+  if (MP.peer){
+    for(const [id,p] of MP.peers){ try{p.conn.close();}catch(e){} }
+    MP.peers.clear();
+    try{MP.peer.destroy();}catch(e){}
+    MP.peer=null;
+  }
+  MP.enabled=false; MP.isHost=false; MP.connected=false;
+  MP.code=null; MP.myId=null;
+  removeRemotePlayers();
+  chat('[MP] '+t('mp.disconnected'));
+}
+
+function mpJoinHost(hostPeerId, code){
+  if (!MP.peer) mpInit();
+  MP.isHost=false; MP.enabled=true;
+  MP.code=code;
+  const conn=MP.peer.connect(hostPeerId, {metadata:{nick:MP.nick}});
+  conn.on('open',()=>{
+    MP.connected=true; MP.hostNick='Host';
+    chat('[MP] '+t('mp.connected'));
+    requestWorldFromHost(conn);
+  });
+  conn.on('data', data=> handleClientMessage(data));
+  conn.on('close',()=>{
+    MP.connected=false;
+    chat('[MP] '+t('mp.disconnected'));
+    removeRemotePlayers();
+  });
+  MP.peers.set(hostPeerId, {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0, health:20, mode:'creative'});
+}
+
+function handleHostIncoming(conn){
+  const peerNick=(conn.metadata&&conn.metadata.nick)||'Player';
+  const pid=conn.peer;
+  // check nick uniqueness
+  for(const [id,p] of MP.peers){
+    if(p.nick===peerNick){
+      conn.send({t:'nickTaken', nick:peerNick});
+      conn.close(); return;
+    }
+  }
+  MP.peers.set(pid, {conn, nick:peerNick, pos:{x:0,y:64,z:0}, yaw:0, health:20, mode:player?player.mode:'survival'});
+  chat('[MP] '+t('mp.playerJoined', peerNick));
+
+  conn.on('data', data=> handleHostMessage(pid, data));
+  conn.on('close',()=>{
+    const p=MP.peers.get(pid);
+    if(p) chat('[MP] '+t('mp.playerLeft', p.nick));
+    MP.peers.delete(pid);
+    removeRemotePlayer(pid);
+  });
+
+  // send game mode + nick list
+  conn.send({t:'welcome', mode:player?player.mode:'survival', hostNick:MP.nick});
+  conn.send({t:'nickList', nicks:getNickList()});
+  // tell others about new player
+  broadcast({t:'playerJoined', nick:peerNick, pid});
+  sendWorldToClient(conn);
+}
+
+function handleHostMessage(pid, data){
+  const p=MP.peers.get(pid); if(!p) return;
+  switch(data.t){
+    case 'requestWorld':
+      sendWorldToClient(p.conn); break;
+    case 'pos':
+      p.pos=data.pos; p.yaw=data.yaw; break;
+    case 'attack':
+      if(player && player.mode==='survival'){
+        handlePVPAttack(pid, data); break;
+      }
+      break;
+    case 'blockBreak':{
+      const {x,y,z}=data;
+      if(world){
+        const old=world.getBlock(x,y,z);
+        if(old>0){ breakBlock(world, null, x, y, z, true); broadcast({t:'blockBreak',x,y,z}, pid); }
+      } break;
+    }
+    case 'blockPlace':{
+      const {x,y,z,id}=data;
+      if(world){
+        world.setBlock(x,y,z,id); broadcast({t:'blockPlace',x,y,z,id}, pid);
+      } break;
+    }
+    case 'chat':{
+      const msg='<'+p.nick+'> '+data.msg;
+      chat(msg); broadcast({t:'chat',msg,nick:p.nick}, pid);
+      break;
+    }
+    case 'gamemode':{
+      if(!isHost()) break;
+      const m=data.mode;
+      broadcast({t:'gamemode', mode:m});
+      for(const [id,pp] of MP.peers) pp.mode=m;
+      chat('[MP] '+t('mp.gmChanged', p.nick, t(m==='creative'?'mp.creative':'mp.survival')));
+      break;
+    }
+    case 'damage':{
+      // client reports fall damage etc
+      if(player){
+        p.health=Math.max(0, Math.min(20, p.health-data.amount));
+        broadcast({t:'playerHealth', pid, health:p.health});
+        if(p.health<=0){
+          broadcast({t:'playerDied', pid, nick:p.nick});
+          chat('[MP] '+p.nick+' died!');
+          p.health=20; p.pos={x:0,y:64,z:0};
+          p.conn.send({t:'respawn', pos:p.pos});
+        }
+      } break;
+    }
+  }
+}
+
+function handleClientMessage(data){
+  switch(data.t){
+    case 'welcome':
+      MP.hostNick=data.hostNick||'Host';
+      player.mode=data.mode; refreshBars();
+      chat('[MP] '+t('mp.connected'));
+      break;
+    case 'nickList':
+      // reserved for future use
+      break;
+    case 'nickTaken':
+      chat('[MP] '+t('mp.nameTaken')+' ('+data.nick+')');
+      MP.connected=false; MP.enabled=false;
+      if(MP.peer) try{MP.peer.destroy();}catch(e){}
+      MP.peer=null; MP.code=null;
+      break;
+    case 'worldData':
+      applyWorldData(data); break;
+    case 'blockBreak':
+      if(world) breakBlock(world, null, data.x, data.y, data.z, true); break;
+    case 'blockPlace':
+      if(world) world.setBlock(data.x, data.y, data.z, data.id); break;
+    case 'playerPos':
+      updateRemotePlayer(data.pid, data); break;
+    case 'playerDied':
+      if(remotePlayers[data.pid]) removeRemotePlayer(data.pid);
+      break;
+    case 'playerHealth':
+      if(remotePlayers[data.pid]) remotePlayers[data.pid].hp=data.health;
+      break;
+    case 'chat':
+      chat('<'+data.nick+'> '+data.msg); break;
+    case 'gamemode':
+      player.mode=data.mode; player.flying=false; refreshBars();
+      chat('[MP] '+t('mp.gmChanged', 'Host', t(data.mode==='creative'?'mp.creative':'mp.survival')));
+      break;
+    case 'pvpHit':
+      if(player && !player.dead){
+        player.damage(data.damage||1);
+        chat('[PVP] You were hit by '+data.from+' for '+data.damage+' damage');
+      }
+      break;
+    case 'time':
+      if(world) world.time=data.time; break;
+    case 'day':
+      if(world) world.day=data.day; break;
+  }
+}
+
+function sendWorldToClient(conn){
+  if(!world||!player) return;
+  const mods={};
+  for(const [k,m] of world.modified){
+    const a=[]; for(const [i,v] of m) a.push(i,v);
+    if(a.length) mods[k]=a;
+  }
+  const chunksData={};
+  for(const [k,ch] of world.chunks){
+    if(ch.generated){
+      chunksData[k]={blocks:Array.from(ch.blocks), cx:ch.cx, cz:ch.cz};
+    }
+  }
+  conn.send({
+    t:'worldData',
+    seed:world.seed, time:Math.round(world.time), day:world.day,
+    mode:player.mode, mods, chunks:chunksData,
+    spawn:{x:player.x, y:player.y, z:player.z}
+  });
+}
+
+function requestWorldFromHost(conn){
+  conn.send({t:'requestWorld'});
+}
+
+function applyWorldData(data){
+  if(!data||!data.seed) return;
+  // If world already running, just apply mods on top
+  if(world){
+    for(const k in data.mods){
+      const a=data.mods[k];
+      for(let i=0;i<a.length;i+=2){
+        const [cx2,cz2]=k.split(',').map(Number);
+        const idx=a[i], bid=a[i+1];
+        const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
+        world.setBlock(cx2*CS+x, y, cz2*CS+z, bid);
+      }
+    }
+  }
+}
+
+function broadcast(data, excludePid){
+  if(!MP.isHost||!MP.connected) return;
+  for(const [pid,p] of MP.peers){
+    if(pid===excludePid) continue;
+    try{ p.conn.send(data); }catch(e){}
+  }
+}
+
+function mpTick(dt){
+  if(!MP.enabled||!MP.connected||!player) return;
+  MP._posTimer+=dt;
+  if(MP._posTimer>=0.05){ // 20 Hz position sync
+    MP._posTimer=0;
+    const posData={t:'pos', pos:{x:player.x,y:player.y,z:player.z}, yaw:player.yaw};
+    if(MP.isHost){
+      for(const [pid,p] of MP.peers){
+        try{ p.conn.send(posData); }catch(e){}
+      }
+    } else {
+      // send to host
+      for(const [pid,p] of MP.peers){
+        try{ p.conn.send(posData); }catch(e){}
+      }
+    }
+  }
+  // cleanup dead remote players
+  MP._cleanupTimer+=dt;
+  if(MP._cleanupTimer>2){
+    MP._cleanupTimer=0;
+    for(const [pid,p] of MP.peers){
+      if(p.lastTick && performance.now()-p.lastTick>10000){
+        MP.peers.delete(pid);
+        removeRemotePlayer(pid);
+      }
+    }
+  }
+}
+
+function getNickList(){
+  const n=[MP.nick];
+  for(const [id,p] of MP.peers) n.push(p.nick);
+  return n;
+}
+
+function isNickTaken(nick){
+  for(const [id,p] of MP.peers) if(p.nick===nick) return true;
+  return false;
+}
+
+function isHost(){ return MP.isHost; }
+
+/* ---- Remote Player Rendering ---- */
+const remotePlayers={};
+
+function spawnRemotePlayer(pid, nick){
+  if(remotePlayers[pid]) return;
+  const group=new THREE.Group();
+  // body
+  const bodyGeo=new THREE.BoxGeometry(0.6,1.2,0.3);
+  const bodyMat=new THREE.MeshLambertMaterial({color:0x4488cc});
+  const body=new THREE.Mesh(bodyGeo,bodyMat);
+  body.position.y=0;
+  group.add(body);
+  // head
+  const headGeo=new THREE.BoxGeometry(0.5,0.5,0.5);
+  const headMat=new THREE.MeshLambertMaterial({color:0xffcc88});
+  const head=new THREE.Mesh(headGeo,headMat);
+  head.position.y=0.85;
+  group.add(head);
+  // eyes
+  const eyeGeo=new THREE.BoxGeometry(0.08,0.08,0.02);
+  const eyeMat=new THREE.MeshBasicMaterial({color:0x222222});
+  const eyeL=new THREE.Mesh(eyeGeo,eyeMat);
+  eyeL.position.set(-0.12,0.88,0.26);
+  group.add(eyeL);
+  const eyeR=new THREE.Mesh(eyeGeo,eyeMat);
+  eyeR.position.set(0.12,0.88,0.26);
+  group.add(eyeR);
+  // name tag
+  const nameDiv=document.createElement('div');
+  nameDiv.className='mp-nametag';
+  nameDiv.innerHTML='<span>'+nick+'</span><div class="hp-bar"><i style="width:100%"></i></div>';
+  document.body.appendChild(nameDiv);
+  scene.add(group);
+  remotePlayers[pid]={group, nameDiv, hp:20, targetPos:new THREE.Vector3(), targetYaw:0};
+}
+
+function updateRemotePlayer(pid, data){
+  if(!remotePlayers[pid]) spawnRemotePlayer(pid, data.nick||'?');
+  const rp=remotePlayers[pid];
+  rp.targetPos.set(data.pos.x, data.pos.y, data.pos.z);
+  rp.targetYaw=data.yaw||0;
+  rp.nick=data.nick||'?';
+  const p=MP.peers.get(pid);
+  if(p){ p.pos=data.pos; p.yaw=data.yaw; p.lastTick=performance.now(); }
+}
+
+function updateRemotePlayersVisual(dt){
+  for(const [pid,rp] of Object.entries(remotePlayers)){
+    // smooth interpolation
+    rp.group.position.lerp(rp.targetPos, 0.3);
+    // rotate head
+    rp.group.rotation.y=rp.targetYaw;
+    // project name tag to screen
+    const pos=rp.group.position.clone();
+    pos.y+=1.6;
+    pos.project(camera);
+    const x=(pos.x*0.5+0.5)*window.innerWidth;
+    const y=(-(pos.y*0.5)+0.5)*window.innerHeight;
+    rp.nameDiv.style.left=x+'px';
+    rp.nameDiv.style.top=y+'px';
+    rp.nameDiv.style.display=pos.z<1?'block':'none';
+    // hp bar
+    const hpI=rp.nameDiv.querySelector('.hp-bar i');
+    if(hpI) hpI.style.width=Math.max(0,rp.hp/20*100)+'%';
+  }
+}
+
+function removeRemotePlayer(pid){
+  const rp=remotePlayers[pid];
+  if(!rp) return;
+  scene.remove(rp.group);
+  disposeObj(rp.group);
+  if(rp.nameDiv.parentNode) rp.nameDiv.parentNode.removeChild(rp.nameDiv);
+  delete remotePlayers[pid];
+}
+
+function removeRemotePlayers(){
+  for(const pid in remotePlayers) removeRemotePlayer(pid);
+}
+
+function handlePVPAttack(pid, data){
+  if(!player||player.dead) return;
+  const dist=Math.hypot(player.x-data.x, player.y-data.y, player.z-data.z);
+  if(dist>4.5) return;
+  player.damage(data.damage||1);
+  chat('[PVP] You were hit for '+data.damage+' damage');
+}
+
+function mpAttackRemote(){
+  if(!MP.enabled||!MP.connected) return;
+  if(player&&player.mode!=='survival') return;
+  const d=new THREE.Vector3(); camera.getWorldDirection(d);
+  for(const [pid,rp] of Object.entries(remotePlayers)){
+    const cx=rp.group.position.x-camera.position.x;
+    const cy=rp.group.position.y+0.9-camera.position.y;
+    const cz=rp.group.position.z-camera.position.z;
+    const dist=Math.hypot(cx,cy,cz);
+    if(dist>4.2) continue;
+    const dot=(cx*d.x+cy*d.y+cz*d.z)/dist;
+    if(dot<0.94) continue;
+    // hit!
+    const st=player.held(); const it=st?itemDef(st.id):null;
+    let dmg=it&&it.tool==='sword'?it.dmg:(it&&it.tool?it.dmg-1:1);
+    if(player.sprint) dmg+=1;
+    dmg=Math.max(1,dmg);
+    const pid2=pid;
+    MP.peers.forEach((p,id)=>{
+      if(id===pid2) try{p.conn.send({t:'pvpHit',damage:dmg,from:MP.nick});}catch(e){}
+    });
+    rp.hp=Math.max(0,rp.hp-dmg);
+    if(rp.hp<=0){
+      chat('[PVP] '+rp.nick+' killed!');
+      removeRemotePlayer(pid);
+      MP.peers.delete(pid);
+    }
+    return;
+  }
+}
+
+/* ---- MP Chat Integration ---- */
+function mpSendChat(msg){
+  if(!MP.enabled||!MP.connected) return;
+  if(MP.isHost){
+    // host broadcasts to all
+    broadcast({t:'chat',msg,nick:MP.nick});
+    chat('<'+MP.nick+'> '+msg);
+  } else {
+    // client sends to host
+    for(const [pid,p] of MP.peers){
+      try{p.conn.send({t:'chat',msg});}catch(e){}
+    }
+  }
+}
+
+function mpSendBlockBreak(x,y,z){
+  if(!MP.enabled||!MP.connected) return;
+  if(MP.isHost) broadcast({t:'blockBreak',x,y,z});
+  else for(const [pid,p] of MP.peers) try{p.conn.send({t:'blockBreak',x,y,z});}catch(e){}
+}
+
+function mpSendBlockPlace(x,y,z,id){
+  if(!MP.enabled||!MP.connected) return;
+  if(MP.isHost) broadcast({t:'blockPlace',x,y,z,id});
+  else for(const [pid,p] of MP.peers) try{p.conn.send({t:'blockPlace',x,y,z,id});}catch(e){}
+}
+
+function mpSendGameMode(mode){
+  if(!MP.enabled||!MP.connected||!MP.isHost) return;
+  broadcast({t:'gamemode',mode});
+  for(const [id,p] of MP.peers) p.mode=mode;
+}
+
+function mpFindHostByCode(code){
+  return new Promise((resolve)=>{
+    // Use a simple approach: try connecting to a known PeerJS server ID pattern
+    // In practice, the host needs to share their actual peer ID
+    // We'll use a broadcast channel or the code as the peer ID suffix
+    const testId='lpc-'+code;
+    const tempConn=MP.peer.connect(testId, {metadata:{nick:MP.nick}});
+    let resolved=false;
+    const timer=setTimeout(()=>{
+      if(!resolved){ resolved=true; tempConn.close(); resolve(null); }
+    }, 4000);
+    tempConn.on('open',()=>{
+      if(resolved) return; resolved=true; clearTimeout(timer);
+      resolve(tempConn);
+    });
+    tempConn.on('error',()=>{
+      if(resolved) return; resolved=true; clearTimeout(timer);
+      resolve(null);
+    });
+  });
+}
+
+async function mpJoinByCode(code){
+  if(!MP.peer) mpInit();
+  // Wait for peer to be ready
+  if(!MP.myId){
+    await new Promise(r=>{
+      const check=setInterval(()=>{
+        if(MP.myId){clearInterval(check);r();}
+      },100);
+    });
+  }
+  MP.isHost=false; MP.enabled=true; MP.code=code;
+  chat('[MP] '+t('mp.waitingForWorld'));
+  const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}});
+  conn.on('open',()=>{
+    MP.connected=true;
+    chat('[MP] '+t('mp.connected'));
+  });
+  conn.on('data', data=>handleClientMessage(data));
+  conn.on('close',()=>{
+    MP.connected=false;
+    chat('[MP] '+t('mp.disconnected'));
+    removeRemotePlayers();
+  });
+  MP.peers.set('host', {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0, health:20, mode:'creative'});
+  // timeout
+  setTimeout(()=>{
+    if(!MP.connected){
+      chat('[MP] Connection failed. Is the host online?');
+      MP.enabled=false; MP.isHost=false; MP.connected=false;
+      MP.peers.clear();
+      try{MP.peer.destroy();}catch(e){}
+      MP.peer=null; MP.code=null;
+    }
+  }, 6000);
+}
+
+/* ------------------------------------------------------------------ *
  * 31. MAIN LOOP                                                        *
  * ------------------------------------------------------------------ */
 let lastT=performance.now(), barTimer=0, saveTimer=0;
@@ -4644,6 +5347,9 @@ function frame(now){
     if (S.showF3) updateF3();
     saveTimer+=dt;
     if (saveTimer>45 && !paused){ saveTimer=0; saveWorld(meta,true); chat(t('msg.autosave')); }
+    // multiplayer tick
+    mpTick(dt);
+    updateRemotePlayersVisual(dt);
     render();
     return;
   }
@@ -4679,6 +5385,7 @@ function updateF3(){
  * ------------------------------------------------------------------ */
 async function boot(){
   loadSettings();
+  mpLoadNick();
   try{
     initRenderer();
   }catch(e){

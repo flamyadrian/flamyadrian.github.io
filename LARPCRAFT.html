@@ -4934,7 +4934,7 @@ function mpStartHost(){
   });
   MP.peer.on('connection', conn=>{
     if (!MP.isHost){ conn.close(); return; }
-    handleHostIncoming(conn);
+    setupHostConnection(conn);
   });
   MP.peer.on('error', e=>{
     chat('[MP] Error: '+e.type);
@@ -4958,12 +4958,16 @@ function setupHostConnection(conn) {
   const pid = conn.peer;
   conn.on('open', () => {
     const nick = (conn.metadata && conn.metadata.nick) || 'Player';
-    MP.peers.set(pid, { conn, nick, pos: { x: 0, y: 0, z: 0 }, yaw: 0, hp: 20, mode: 'survival' });
+    MP.peers.set(pid, { conn, nick, pos: { x: 0, y: 0, z: 0 }, yaw: 0 });
     chat('[MP] ' + nick + ' joined');
-    conn.send({ t: 'welcome', seed: world.seed, time: world.time, day: world.day, hostNick: MP.nick, mode: player.mode, spawn: { x: player.x, y: player.y, z: player.z } });
+    // Send world data
     const mods = {};
     for (const [k, m] of world.modified) { const a = []; for (const [i, v] of m) a.push(i, v); if (a.length) mods[k] = a; }
-    conn.send({ t: 'worldMods', mods });
+    conn.send({ t: 'welcome', seed: world.seed, time: world.time, day: world.day, hostNick: MP.nick, mode: player.mode, spawn: { x: player.x, y: player.y, z: player.z }, mods: mods });
+    // Send existing items
+    world.entities.forEach(e => { if (e instanceof ItemEntity) conn.send({ t: 'spawnItem', x: e.x, y: e.y, z: e.z, id: e.stack.id, count: e.stack.count, eid: e.id }); });
+    // Broadcast new player to others
+    broadcast({ t: 'playerJoined', nick: nick, pid: pid }, pid);
   });
   conn.on('data', data => handleHostMessage(pid, data));
   conn.on('close', () => { const p = MP.peers.get(pid); if (p) chat('[MP] ' + p.nick + ' left'); MP.peers.delete(pid); removeRemotePlayer(pid); });
@@ -4994,15 +4998,14 @@ function handleHostMessage(pid, data) {
 function handleClientMessage(data) {
   switch (data.t) {
     case 'welcome': MP.hostNick = data.hostNick; applyWorldData(data); break;
-    case 'worldMods': applyOnlyMods(data.mods); break;
     case 'playerPos': updateRemotePlayer(data.pid, data); break;
+    case 'spawnItem': spawnRemoteItem(data); break;
+    case 'removeItem': removeRemoteEntity(data.eid); break;
     case 'chat': chat('<' + data.nick + '> ' + data.msg); break;
     case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); break;
     case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); break;
-    case 'spawnItem': spawnRemoteItem(data); break;
-    case 'removeItem': removeRemoteEntity(data.eid); break;
     case 'pvpHit': player.damage(data.dmg); chat('[PVP] Hit by ' + data.from); break;
-    case 'gamemode': player.mode = data.mode; refreshBars(); break;
+    case 'gamemode': player.mode = data.mode; refreshBars(); chat('[MP] Mode: ' + data.mode); break;
   }
 }
 
@@ -5279,43 +5282,37 @@ function mpFindHostByCode(code){
 }
 
 async function mpJoinByCode(code){
-  if(!MP.peer) mpInit();
-  // Wait for peer to be ready
-  if(!MP.myId){
-    await new Promise(r=>{
-      const check=setInterval(()=>{
-        if(MP.myId){clearInterval(check);r();}
-      },100);
-    });
-  }
+  if(MP.peer){ try{MP.peer.destroy();}catch(e){} MP.peer=null; }
+  MP.myId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
+  MP.peer = new Peer(MP.myId);
   MP.isHost=false; MP.enabled=true; MP.code=code;
-  chat('[MP] '+t('mp.waitingForWorld'));
-  const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}});
+  chat('[MP] Connecting...');
+  // Wait for peer to open
+  await new Promise(r=>{
+    MP.peer.on('open', r);
+    setTimeout(r, 3000);
+  });
+  if(!MP.peer||MP.peer.destroyed){ chat('[MP] Peer init failed'); return; }
+  const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}, reliable:true});
   conn.on('open',()=>{
     MP.connected=true;
-    chat('[MP] '+t('mp.connected')+' — requesting world...');
-    // Request world data from host
-    try{ conn.send({t:'requestWorld'}); }catch(e){}
+    MP.peers.set('host', {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0});
+    chat('[MP] Connected!');
   });
-  conn.on('data', data=>{
-    handleClientMessage(data);
-  });
+  conn.on('data', data=>handleClientMessage(data));
   conn.on('close',()=>{
     MP.connected=false;
-    chat('[MP] '+t('mp.disconnected'));
+    chat('[MP] Disconnected');
     removeRemotePlayers();
   });
-  MP.peers.set('host', {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0, health:20, mode:'creative'});
+  conn.on('error', e=>chat('[MP] Conn error: '+e));
   // timeout
   setTimeout(()=>{
     if(!MP.connected){
-      chat('[MP] Connection failed. Is the host online?');
-      MP.enabled=false; MP.isHost=false; MP.connected=false;
-      MP.peers.clear();
-      try{MP.peer.destroy();}catch(e){}
-      MP.peer=null; MP.code=null;
+      chat('[MP] Connection Failed');
+      mpStop();
     }
-  }, 6000);
+  }, 12000);
 }
 
 /* ------------------------------------------------------------------ *

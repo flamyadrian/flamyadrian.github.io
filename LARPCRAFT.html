@@ -5371,6 +5371,218 @@ async function mpJoinByCode(code){
 }
 
 /* ------------------------------------------------------------------ *
+ * 30b. MULTIPLAYER — FINAL STABLE ENGINE                             *
+ * ------------------------------------------------------------------ */
+const MP = {
+  enabled:false, isHost:false, connected:false, peer:null, myId:null, code:null,
+  peers:new Map(), nick:'Player', hostNick:'Host', _posTimer:0, _syncTimer:0
+};
+
+function genRoomCode(){
+  const letters='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const r=()=>letters[Math.floor(Math.random()*letters.length)];
+  const d=()=>Math.floor(Math.random()*10);
+  return r()+r()+d()+r()+d()+r();
+}
+
+function mpLoadNick(){
+  const saved=Store.get('larpcraft.mpnick','');
+  if(saved && /^[a-zA-Z0-9]{3,16}$/.test(saved)) MP.nick=saved;
+  else MP.nick='Player'+Math.floor(Math.random()*999);
+}
+function mpSaveNick(nick){ MP.nick=nick; Store.set('larpcraft.mpnick', nick); }
+
+function mpInit() {
+  if (MP.peer) return;
+  MP.myId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
+  MP.peer = new Peer(MP.myId, { debug: 1 });
+  MP.peer.on('connection', conn => { if (!MP.isHost) conn.close(); else setupHostConnection(conn); });
+}
+
+function mpStartHost() {
+  MP.code = genRoomCode();
+  if (MP.peer) { try { MP.peer.destroy(); } catch(e) {} MP.peer = null; }
+  MP.isHost = true; MP.enabled = true;
+  MP.peer = new Peer('lpc-' + MP.code, { debug: 1 });
+  MP.peer.on('open', () => { MP.connected = true; chat('[MP] Server Started! CODE: ' + MP.code); refreshPauseMultiplayerUI(); });
+  MP.peer.on('connection', conn => setupHostConnection(conn));
+  MP.peer.on('error', err => { if (err.type === 'unavailable-id') setTimeout(mpStartHost, 1000); });
+}
+
+async function mpJoinByCode(code) {
+  if (MP.peer) { try { MP.peer.destroy(); } catch(e) {} MP.peer = null; }
+  const myTempId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
+  MP.peer = new Peer(myTempId, { debug: 1 });
+  MP.peer.on('open', () => {
+    MP.myId = myTempId; MP.isHost = false; MP.enabled = true; MP.code = code;
+    chat('[MP] Connecting to ' + code + '...');
+    const conn = MP.peer.connect('lpc-' + code, { metadata: { nick: MP.nick }, reliable: true });
+    setupClientConnection(conn);
+    setTimeout(() => { if (!MP.connected) { chat('[MP] Connection Failed'); mpStop(); } }, 10000);
+  });
+}
+
+function mpStop(){
+  if (MP.peer){ for(const [id,p] of MP.peers) p.conn.close(); MP.peers.clear(); try{MP.peer.destroy();}catch(e){} MP.peer=null; }
+  MP.enabled=false; MP.isHost=false; MP.connected=false; removeRemotePlayers(); chat('[MP] Stopped');
+}
+
+function setupHostConnection(conn) {
+  const pid = conn.peer;
+  conn.on('open', () => {
+    const nick = (conn.metadata && conn.metadata.nick) || 'Player';
+    MP.peers.set(pid, { conn, nick, pos: { x: 0, y: 0, z: 0 }, yaw: 0 });
+    chat('[MP] ' + nick + ' joined');
+    conn.send({ t: 'welcome', seed: world.seed, time: world.time, hostNick: MP.nick, mode: player.mode, spawn: { x: player.x, y: player.y, z: player.z } });
+    const mods = {}; for (const [k, m] of world.modified) { const a = []; for (const [i, v] of m) a.push(i, v); mods[k] = a; }
+    conn.send({ t: 'worldMods', mods });
+    world.entities.forEach(e => { if (e instanceof ItemEntity) conn.send({ t: 'spawnItem', x: e.x, y: e.y, z: e.z, id: e.stack.id, count: e.stack.count, eid: e.id }); });
+  });
+  conn.on('data', data => handleHostMessage(pid, data));
+  conn.on('close', () => { const p = MP.peers.get(pid); if (p) chat('[MP] ' + p.nick + ' left'); MP.peers.delete(pid); removeRemotePlayer(pid); });
+}
+
+function setupClientConnection(conn) {
+  conn.on('open', () => { MP.connected = true; MP.peers.set('host', { conn, nick: 'Host' }); });
+  conn.on('data', data => handleClientMessage(data));
+  conn.on('close', () => { MP.connected = false; exitToMenu(); });
+}
+
+function handleHostMessage(pid, data) {
+  const p = MP.peers.get(pid); if (!p) return;
+  switch (data.t) {
+    case 'pos': p.pos = data.pos; p.yaw = data.yaw; updateRemotePlayer(pid, data); broadcast({ t: 'playerPos', pid, pos: data.pos, yaw: data.yaw, nick: p.nick }, pid); break;
+    case 'chat': broadcast({ t: 'chat', msg: data.msg, nick: p.nick }); chat('<'+p.nick+'> '+data.msg); break;
+    case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); broadcast(data, pid); break;
+    case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); broadcast(data, pid); break;
+    case 'dropItem': const eid = Math.random().toString(36).substr(2,9); dropStack(world, data.x, data.y, data.z, stackOf(data.id, data.count), eid); broadcast({ t: 'spawnItem', ...data, eid }, pid); break;
+    case 'pickupItem': removeRemoteEntity(data.eid); broadcast({ t: 'removeItem', eid: data.eid }); break;
+    case 'pvpHit': 
+       if (data.to === 'host') { player.damage(data.dmg); chat('[PVP] Hit by ' + p.nick); }
+       else { const target = MP.peers.get(data.to); if (target) target.conn.send({t:'pvpHit', dmg: data.dmg, from: p.nick}); }
+       break;
+  }
+}
+
+function handleClientMessage(data) {
+  switch (data.t) {
+    case 'welcome': MP.hostNick = data.hostNick; initClientWorld(data); break;
+    case 'worldMods': applyOnlyMods(data.mods); break;
+    case 'playerPos': updateRemotePlayer(data.pid, data); break;
+    case 'spawnItem': spawnRemoteItem(data); break;
+    case 'removeItem': removeRemoteEntity(data.eid); break;
+    case 'chat': chat('<' + data.nick + '> ' + data.msg); break;
+    case 'blockBreak': breakBlock(world, null, data.x, data.y, data.z, true); break;
+    case 'blockPlace': world.setBlock(data.x, data.y, data.z, data.id); break;
+    case 'pvpHit': player.damage(data.dmg); chat('[PVP] Hit by ' + data.from); break;
+  }
+}
+
+function initClientWorld(data) {
+  loading = true; menuMode = false; inGame = false;
+  chat('[MP] Preparing world...');
+  world = new World(data.seed); world.time = data.time;
+  const sp = data.spawn;
+  for (let dz = -5; dz <= 5; dz++) for (let dx = -5; dx <= 5; dx++) world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
+  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; ChunkMgr.mesh(world, ch); }
+  let sy = sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) { if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; } }
+  player = new Player(world, sp.x, sy, sp.z); player.mode = data.mode;
+  if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
+  if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
+  hudEl.classList.remove('hidden');
+  setTimeout(() => { loading = false; inGame = true; showScreen(null); requestPointer(); refreshBars(); refreshHotbar(); chat('[MP] Ready!'); }, 1000);
+}
+
+function applyOnlyMods(mods) {
+  for (const k in mods) {
+    const a = mods[k]; const [cx, cz] = k.split(',').map(Number);
+    for (let i = 0; i < a.length; i += 2) {
+      const idx = a[i], bid = a[i+1];
+      const y = (idx/256)|0, r=idx-y*256, z=(r/16)|0, x=r-z*16;
+      world.setBlock(cx*16+x, y, cz*16+z, bid, false);
+    }
+  }
+}
+
+function broadcast(data, exclude) { for (const [pid, p] of MP.peers) { if (pid !== exclude && p.conn && p.conn.open) p.conn.send(data); } }
+
+function mpTick(dt) {
+  if (!MP.connected || !player) return;
+  MP._posTimer += dt;
+  if (MP._posTimer > 0.05) {
+    MP._posTimer = 0;
+    const pos = { x: player.x, y: player.y, z: player.z };
+    if (MP.isHost) broadcast({ t: 'playerPos', pid: 'host', pos, yaw: player.yaw, nick: MP.nick });
+    else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({ t: 'pos', pos, yaw: player.yaw }); }
+  }
+}
+
+function mpSendChat(msg) {
+  if (MP.isHost) { chat('<' + MP.nick + '> ' + msg); broadcast({ t: 'chat', msg, nick: MP.nick }); }
+  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({ t: 'chat', msg }); }
+}
+
+function mpSendBlockBreak(x, y, z) {
+  const msg = { t: 'blockBreak', x, y, z };
+  if (MP.isHost) broadcast(msg);
+  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send(msg); }
+}
+
+function mpSendBlockPlace(x, y, z, id) {
+  const msg = { t: 'blockPlace', x, y, z, id };
+  if (MP.isHost) broadcast(msg);
+  else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send(msg); }
+}
+
+function mpAttackRemote() {
+  if (player.mode !== 'survival') return;
+  const d = new THREE.Vector3(); camera.getWorldDirection(d);
+  for (const [pid, rp] of Object.entries(remotePlayers)) {
+    const dist = Math.hypot(rp.group.position.x - camera.position.x, rp.group.position.y + 0.9 - camera.position.y, rp.group.position.z - camera.position.z);
+    if (dist > 4) continue;
+    const dir = new THREE.Vector3().subVectors(rp.group.position, camera.position).normalize();
+    if (dir.dot(d) < 0.8) continue;
+    const dmg = 2;
+    if (MP.isHost) { const t = MP.peers.get(pid); if (t && t.conn && t.conn.open) t.conn.send({t:'pvpHit', dmg, from: MP.nick}); }
+    else { const h = MP.peers.get('host'); if (h && h.conn && h.conn.open) h.conn.send({t:'pvpHit', to: pid, dmg, from: MP.nick}); }
+  }
+}
+
+function isNickTaken(n){ for(const [,p] of MP.peers) if(p.nick===n) return true; return false; }
+function spawnRemoteItem(d){ const it=new ItemEntity(world,d.x,d.y,d.z,stackOf(d.id,d.count)); it.id=d.eid; world.entities.push(it); }
+function removeRemoteEntity(eid){ const idx=world.entities.findIndex(e=>e.id===eid); if(idx>=0){ const e=world.entities[idx]; if(e.obj){entityGroup.remove(e.obj);disposeObj(e.obj);} world.entities.splice(idx,1); } }
+
+/* ---- Remote Player Rendering ---- */
+const remotePlayers={};
+function spawnRemotePlayer(pid, nick){
+  if(remotePlayers[pid]) return;
+  const group=new THREE.Group(); const black=new THREE.MeshLambertMaterial({color:0x000000});
+  const head=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), black); head.position.y=1.6; group.add(head);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.8,1.2,0.4), black); body.position.y=0.6; group.add(body);
+  const limbs=[{x:-0.525,y:0.6},{x:0.525,y:0.6},{x:-0.1875,y:0},{x:0.1875,y:0}];
+  const m=[]; limbs.forEach(l=>{ const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.25,1.2,0.25),black); mesh.position.set(l.x,l.y,0); group.add(mesh); m.push(mesh); });
+  const nameDiv=document.createElement('div'); nameDiv.className='mp-nametag'; nameDiv.innerHTML='<span>'+nick+'</span>';
+  document.body.appendChild(nameDiv); scene.add(group);
+  remotePlayers[pid]={group, nameDiv, targetPos:new THREE.Vector3(), targetYaw:0, armL:m[0], armR:m[1], legL:m[2], legR:m[3]};
+}
+function updateRemotePlayer(pid, data){ if(!remotePlayers[pid]) spawnRemotePlayer(pid, data.nick||'?'); const rp=remotePlayers[pid]; rp.targetPos.set(data.pos.x, data.pos.y, data.pos.z); rp.targetYaw=data.yaw||0; }
+function updateRemotePlayersVisual(dt){
+  for(const [pid,rp] of Object.entries(remotePlayers)){
+    const prev=rp.group.position.clone(); rp.group.position.lerp(rp.targetPos, 0.2); rp.group.rotation.y=rp.targetYaw;
+    if(rp.group.position.distanceTo(prev)>0.001){
+      const t=performance.now()*0.008, s=Math.sin(t*6)*0.5;
+      rp.legL.rotation.x=s; rp.legR.rotation.x=-s; rp.armL.rotation.x=-s; rp.armR.rotation.x=s;
+    }
+    const pos=rp.group.position.clone(); pos.y+=2.2; pos.project(camera);
+    const x=(pos.x*0.5+0.5)*window.innerWidth; const y=(-(pos.y*0.5)+0.5)*window.innerHeight;
+    rp.nameDiv.style.left=x+'px'; rp.nameDiv.style.top=y+'px';
+    rp.nameDiv.style.display=(pos.z<1 && inGame)?'block':'none';
+  }
+}
+function removeRemotePlayer(pid){ const rp=remotePlayers[pid]; if(!rp) return; scene.remove(rp.group); if(rp.nameDiv.parentNode) rp.nameDiv.parentNode.removeChild(rp.nameDiv); delete remotePlayers[pid]; }
+function removeRemotePlayers(){ for(const pid in remotePlayers) removeRemotePlayer(pid); }
+
+/* ------------------------------------------------------------------ *
  * 31. MAIN LOOP                                                        *
  * ------------------------------------------------------------------ */
 let lastT=performance.now(), barTimer=0, saveTimer=0;

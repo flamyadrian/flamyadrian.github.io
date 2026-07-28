@@ -4921,23 +4921,23 @@ function mpInit() {
 
 function mpStartHost(){
   MP.code=genRoomCode();
-  // Destroy old peer if exists
   if(MP.peer){ try{MP.peer.destroy();}catch(e){} MP.peer=null; }
-  // Create peer with room code as ID so clients can connect
-  MP.peer=new Peer('lpc-'+MP.code);
-  MP.peer.on('open', myId=>{
-    MP.myId=myId;
-    MP.isHost=true; MP.enabled=true; MP.connected=true;
-    MP.peers.clear();
-    chat('[MP] '+t('mp.youAreHost')+' — '+t('mp.code')+': '+MP.code);
+  MP.isHost=true; MP.enabled=true;
+  const hostId='lpc-'+MP.code;
+  MP.peer=new Peer(hostId, {debug:0});
+  MP.peer.on('open', id=>{
+    MP.myId=id; MP.connected=true; MP.peers.clear();
+    chat('[MP] Server Ready! CODE: '+MP.code);
     refreshPauseMultiplayerUI();
   });
-  MP.peer.on('connection', conn=>{
-    if (!MP.isHost){ conn.close(); return; }
-    setupHostConnection(conn);
-  });
+  MP.peer.on('connection', conn=>setupHostConnection(conn));
   MP.peer.on('error', e=>{
-    chat('[MP] Error: '+e.type);
+    if(e.type==='unavailable-id'){
+      chat('[MP] Code taken, retrying...');
+      setTimeout(mpStartHost, 1500);
+    } else {
+      chat('[MP] Error: '+e.type);
+    }
   });
 }
 
@@ -5283,36 +5283,40 @@ function mpFindHostByCode(code){
 
 async function mpJoinByCode(code){
   if(MP.peer){ try{MP.peer.destroy();}catch(e){} MP.peer=null; }
-  MP.myId = 'lpc-c-' + Math.random().toString(36).substr(2, 6);
-  MP.peer = new Peer(MP.myId);
   MP.isHost=false; MP.enabled=true; MP.code=code;
   chat('[MP] Connecting...');
-  // Wait for peer to open
-  await new Promise(r=>{
-    MP.peer.on('open', r);
-    setTimeout(r, 3000);
+  // Create client peer
+  const clientId='lpc-c-'+Math.random().toString(36).substr(2,6);
+  MP.peer=new Peer(clientId, {debug:0});
+  // Wait for peer to be ready
+  await new Promise(resolve=>{
+    MP.peer.on('open', resolve);
+    MP.peer.on('error', e=>{ chat('[MP] Peer error: '+e.type); resolve(); });
+    setTimeout(resolve, 5000);
   });
-  if(!MP.peer||MP.peer.destroyed){ chat('[MP] Peer init failed'); return; }
-  const conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}, reliable:true});
-  conn.on('open',()=>{
-    MP.connected=true;
-    MP.peers.set('host', {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0});
-    chat('[MP] Connected!');
-  });
+  if(!MP.peer||MP.peer.destroyed){ chat('[MP] Failed to create peer'); return; }
+  // Try to connect with retries
+  let conn=null;
+  for(let attempt=1; attempt<=3; attempt++){
+    chat('[MP] Attempt '+attempt+'/3...');
+    conn=MP.peer.connect('lpc-'+code, {metadata:{nick:MP.nick}, reliable:true});
+    // Wait for connection to open or fail
+    const ok=await new Promise(r=>{
+      let done=false;
+      conn.on('open',()=>{ if(!done){done=true;r(true);} });
+      conn.on('error',()=>{ if(!done){done=true;r(false);} });
+      setTimeout(()=>{ if(!done){done=true;r(false);} }, 5000);
+    });
+    if(ok) break;
+    if(attempt===3){ chat('[MP] Connection Failed'); mpStop(); return; }
+    await new Promise(r=>setTimeout(r, 1000));
+  }
+  // Connection established
+  MP.connected=true;
+  MP.peers.set('host', {conn, nick:'Host', pos:{x:0,y:64,z:0}, yaw:0});
   conn.on('data', data=>handleClientMessage(data));
-  conn.on('close',()=>{
-    MP.connected=false;
-    chat('[MP] Disconnected');
-    removeRemotePlayers();
-  });
-  conn.on('error', e=>chat('[MP] Conn error: '+e));
-  // timeout
-  setTimeout(()=>{
-    if(!MP.connected){
-      chat('[MP] Connection Failed');
-      mpStop();
-    }
-  }, 12000);
+  conn.on('close',()=>{ MP.connected=false; chat('[MP] Disconnected'); removeRemotePlayers(); });
+  conn.on('error',e=>chat('[MP] Error: '+e));
 }
 
 /* ------------------------------------------------------------------ *

@@ -174,10 +174,6 @@ function startGame(){
 
 function flap(){
   if(state==='playing'){verity.vy=flapPower;verity.wingT=8;}
-  else if(state==='dead'&&frame>30){
-    if(score>best){best=score;save();}
-    showMenu();
-  }
 }
 
 document.addEventListener('keydown',e=>{
@@ -186,9 +182,6 @@ document.addEventListener('keydown',e=>{
   else if(e.code==='Escape'&&state==='paused'){state='playing';document.getElementById('pauseOverlay').classList.add('hidden');}
 });
 C.addEventListener('pointerdown',e=>{e.preventDefault();flap();});
-document.getElementById('gameOverMenu').addEventListener('pointerdown',e=>{
-  if(state==='dead'&&frame>30)e.stopPropagation();
-});
 
 function addPipe(){
   const minY=100, maxY=groundY-pipeGap-100;
@@ -213,7 +206,7 @@ function spawnStars(){
 function update(){
   if(state!=='playing')return;
   frame++;
-  if(frame%Math.max(50,pipeInterval-Math.floor(score/5)*2)===0)addPipe();
+  if(frame%pipeInterval===0)addPipe();
 
   verity.vy+=gravity;
   verity.y+=verity.vy;
@@ -229,7 +222,6 @@ function update(){
     if(pipes[i].x+pipeW<0){pipes.splice(i,1);continue;}
     if(!pipes[i].scored&&pipes[i].x+pipeW<verity.x){
       pipes[i].scored=true;score++;
-      if(score%10===0){speed+=0.15;pipeGap=Math.max(110,pipeGap-2);}
     }
     const p=pipes[i];
     const r={x:verity.x-14,y:verity.y-14,w:28,h:28};
@@ -250,6 +242,8 @@ function die(){
   state='dead'; frame=0;
   shakeDur=12;
   spawnStars();
+  if(score>best){best=score;save();}
+  showGameOver();
 }
 
 function drawSky(){

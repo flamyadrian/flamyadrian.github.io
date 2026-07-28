@@ -4993,7 +4993,10 @@ function handleHostMessage(pid, data){
     case 'requestWorld':
       sendWorldToClient(p.conn); break;
     case 'pos':
-      p.pos=data.pos; p.yaw=data.yaw; break;
+      p.pos=data.pos; p.yaw=data.yaw; p.lastTick=performance.now();
+      // Relay position to all other clients
+      broadcast({t:'playerPos', pid, pos:data.pos, yaw:data.yaw, nick:p.nick}, pid);
+      break;
     case 'attack':
       if(player && player.mode==='survival'){
         handlePVPAttack(pid, data); break;
@@ -5117,8 +5120,64 @@ function requestWorldFromHost(conn){
 
 function applyWorldData(data){
   if(!data||!data.seed) return;
-  // If world already running, just apply mods on top
-  if(world){
+  // If no world running, create one from seed
+  if(!world){
+    world = new World(data.seed);
+    world.time = data.time||6000;
+    world.day = data.day||1;
+    // Apply mods
+    for(const k in data.mods){
+      const a=data.mods[k]; const mp=new Map();
+      for(let i=0;i<a.length;i+=2) mp.set(a[i],a[i+1]);
+      world.modified.set(k,mp);
+    }
+    // Generate chunks from data
+    for(const k in data.chunks){
+      const cd=data.chunks[k];
+      const ch=new Chunk(cd.cx, cd.cz);
+      ch.blocks=new Uint8Array(cd.blocks);
+      ch.generated=true;
+      // Rebuild heightmap
+      ch.minY=CH; ch.maxY=0;
+      for(let z=0;z<CS;z++) for(let x=0;x<CS;x++){
+        let top=0;
+        for(let y=CH-1;y>=0;y--){
+          const id=ch.blocks[idxOf(x,y,z)];
+          if(id){ if(y>ch.maxY)ch.maxY=y; if(y<ch.minY)ch.minY=y; }
+          if(id && isOpaque(id) && top===0) top=y;
+        }
+        ch.hmap[z*CS+x]=top;
+      }
+      world.chunks.set(k,ch);
+    }
+    // Apply modifications on top
+    for(const k in data.mods){
+      const a=data.mods[k];
+      const [cx2,cz2]=k.split(',').map(Number);
+      for(let i=0;i<a.length;i+=2){
+        const idx=a[i], bid=a[i+1];
+        const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
+        world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
+      }
+    }
+    // Create player at spawn
+    const sp=data.spawn||{x:0,y:64,z:0};
+    player = new Player(world, sp.x, sp.y, sp.z);
+    player.mode=data.mode||'survival';
+    // Light + mesh all chunks
+    for(const [,ch] of world.chunks){
+      world.computeLight(ch);
+      ch.lit=true; ch.needMesh=true;
+    }
+    ChunkMgr.update(world, player.x, player.z, 9, false);
+    // Enter game
+    loading=false; menuMode=false; inGame=true; paused=false;
+    showScreen(null);
+    requestPointer();
+    refreshBars(); refreshHotbar();
+    chat('[MP] '+t('mp.connected')+' — '+t('mp.waitingForWorld').replace('...',''));
+  } else {
+    // World exists, just apply mods
     for(const k in data.mods){
       const a=data.mods[k];
       for(let i=0;i<a.length;i+=2){
@@ -5144,13 +5203,14 @@ function mpTick(dt){
   MP._posTimer+=dt;
   if(MP._posTimer>=0.05){ // 20 Hz position sync
     MP._posTimer=0;
-    const posData={t:'pos', pos:{x:player.x,y:player.y,z:player.z}, yaw:player.yaw};
+    const posData={t:'pos', pos:{x:player.x,y:player.y,z:player.z}, yaw:player.yaw, nick:MP.nick};
     if(MP.isHost){
+      // Host broadcasts position to all clients with playerPos type
       for(const [pid,p] of MP.peers){
-        try{ p.conn.send(posData); }catch(e){}
+        try{ p.conn.send({t:'playerPos', pid:'host', pos:posData.pos, yaw:posData.yaw, nick:MP.nick}); }catch(e){}
       }
     } else {
-      // send to host
+      // Client sends position to host
       for(const [pid,p] of MP.peers){
         try{ p.conn.send(posData); }catch(e){}
       }
@@ -5188,34 +5248,44 @@ const remotePlayers={};
 function spawnRemotePlayer(pid, nick){
   if(remotePlayers[pid]) return;
   const group=new THREE.Group();
-  // body
-  const bodyGeo=new THREE.BoxGeometry(0.6,1.2,0.3);
-  const bodyMat=new THREE.MeshLambertMaterial({color:0x4488cc});
-  const body=new THREE.Mesh(bodyGeo,bodyMat);
-  body.position.y=0;
-  group.add(body);
-  // head
-  const headGeo=new THREE.BoxGeometry(0.5,0.5,0.5);
-  const headMat=new THREE.MeshLambertMaterial({color:0xffcc88});
-  const head=new THREE.Mesh(headGeo,headMat);
-  head.position.y=0.85;
+  const black=new THREE.MeshLambertMaterial({color:0x111111});
+  const darkGray=new THREE.MeshLambertMaterial({color:0x222222});
+  // Head (0.8x0.8x0.8)
+  const head=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), black);
+  head.position.y=1.6;
   group.add(head);
-  // eyes
-  const eyeGeo=new THREE.BoxGeometry(0.08,0.08,0.02);
-  const eyeMat=new THREE.MeshBasicMaterial({color:0x222222});
-  const eyeL=new THREE.Mesh(eyeGeo,eyeMat);
-  eyeL.position.set(-0.12,0.88,0.26);
-  group.add(eyeL);
-  const eyeR=new THREE.Mesh(eyeGeo,eyeMat);
-  eyeR.position.set(0.12,0.88,0.26);
-  group.add(eyeR);
-  // name tag
+  // Eyes
+  const eyeW=new THREE.MeshBasicMaterial({color:0xffffff});
+  const eyeB=new THREE.MeshBasicMaterial({color:0x111111});
+  const eyeGeo=new THREE.BoxGeometry(0.12,0.08,0.02);
+  const eyeL=new THREE.Mesh(eyeGeo,eyeW); eyeL.position.set(-0.15,1.65,0.41); group.add(eyeL);
+  const eyeR=new THREE.Mesh(eyeGeo,eyeW); eyeR.position.set(0.15,1.65,0.41); group.add(eyeR);
+  const pupilGeo=new THREE.BoxGeometry(0.06,0.06,0.02);
+  const pupilL=new THREE.Mesh(pupilGeo,eyeB); pupilL.position.set(-0.14,1.64,0.42); group.add(pupilL);
+  const pupilR=new THREE.Mesh(pupilGeo,eyeB); pupilR.position.set(0.16,1.64,0.42); group.add(pupilR);
+  // Body (0.8x1.2x0.4)
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.8,1.2,0.4), darkGray);
+  body.position.y=0.6;
+  group.add(body);
+  // Arms (0.25x1.2x0.25 each)
+  const armGeo=new THREE.BoxGeometry(0.25,1.2,0.25);
+  const armL=new THREE.Mesh(armGeo, black);
+  armL.position.set(-0.525,0.6,0); group.add(armL);
+  const armR=new THREE.Mesh(armGeo, black);
+  armR.position.set(0.525,0.6,0); group.add(armR);
+  // Legs (0.25x1.2x0.25 each)
+  const legGeo=new THREE.BoxGeometry(0.25,1.2,0.25);
+  const legL=new THREE.Mesh(legGeo, black);
+  legL.position.set(-0.1875,0,0); group.add(legL);
+  const legR=new THREE.Mesh(legGeo, black);
+  legR.position.set(0.1875,0,0); group.add(legR);
+  // Name tag (HTML overlay)
   const nameDiv=document.createElement('div');
   nameDiv.className='mp-nametag';
-  nameDiv.innerHTML='<span>'+nick+'</span><div class="hp-bar"><i style="width:100%"></i></div>';
+  nameDiv.innerHTML='<span>'+nick+'</span>';
   document.body.appendChild(nameDiv);
   scene.add(group);
-  remotePlayers[pid]={group, nameDiv, hp:20, targetPos:new THREE.Vector3(), targetYaw:0};
+  remotePlayers[pid]={group, nameDiv, hp:20, targetPos:new THREE.Vector3(), targetYaw:0, nick};
 }
 
 function updateRemotePlayer(pid, data){
@@ -5231,21 +5301,33 @@ function updateRemotePlayer(pid, data){
 function updateRemotePlayersVisual(dt){
   for(const [pid,rp] of Object.entries(remotePlayers)){
     // smooth interpolation
+    const prev=rp.group.position.clone();
     rp.group.position.lerp(rp.targetPos, 0.3);
-    // rotate head
+    // rotate
     rp.group.rotation.y=rp.targetYaw;
-    // project name tag to screen
+    // walk animation
+    const moved=rp.group.position.distanceTo(prev);
+    if(moved>0.001){
+      const t=performance.now()*0.008;
+      const swing=Math.sin(t*6)*0.5;
+      // swing legs
+      const legs=rp.group.children.filter((_,i)=>i>=5&&i<=6);
+      if(legs[0]) legs[0].rotation.x=swing;
+      if(legs[1]) legs[1].rotation.x=-swing;
+      // swing arms opposite
+      const arms=rp.group.children.filter((_,i)=>i>=3&&i<=4);
+      if(arms[0]) arms[0].rotation.x=-swing;
+      if(arms[1]) arms[1].rotation.x=swing;
+    }
+    // project name tag to screen (above head)
     const pos=rp.group.position.clone();
-    pos.y+=1.6;
+    pos.y+=2.1;
     pos.project(camera);
     const x=(pos.x*0.5+0.5)*window.innerWidth;
     const y=(-(pos.y*0.5)+0.5)*window.innerHeight;
     rp.nameDiv.style.left=x+'px';
     rp.nameDiv.style.top=y+'px';
     rp.nameDiv.style.display=pos.z<1?'block':'none';
-    // hp bar
-    const hpI=rp.nameDiv.querySelector('.hp-bar i');
-    if(hpI) hpI.style.width=Math.max(0,rp.hp/20*100)+'%';
   }
 }
 

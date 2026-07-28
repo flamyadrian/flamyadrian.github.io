@@ -372,6 +372,8 @@ const STR = {
   'mp.waitingForWorld'     : ['Waiting for world data...','Ожидание данных мира...'],
   'mp.copyCode'            : ['Copy Code','Скопировать код'],
   'mp.copied'              : ['Copied!','Скопировано!'],
+  'mp.saveNick'            : ['Save Nick','Сохранить ник'],
+  'mp.nickSaved'           : ['Nick saved!','Ник сохранён!'],
 };
 
 const SPLASHES = {
@@ -4211,7 +4213,7 @@ function screenTitle(){
   box.appendChild(ti);
   const sp=el('div','splash',splashText); box.appendChild(sp);
   box.appendChild(btn(t('menu.singleplayer'), ()=> showScreen(screenWorlds())));
-  const mp=btn(t('menu.multiplayer'), ()=>{}); mp.disabled=true; box.appendChild(mp);
+  box.appendChild(btn(t('menu.multiplayer'), ()=> showScreen(screenMultiplayer())));
   const row=el('div','row');
   row.appendChild(btn(t('menu.options'), ()=> showScreen(screenOptions()), 'half'));
   row.appendChild(btn(t('menu.language'), ()=> showScreen(screenLanguage()), 'half'));
@@ -4223,6 +4225,111 @@ function screenTitle(){
   s.appendChild(box);
   const c1=el('div','corner l','LARPCRAFT '+VERSION); s.appendChild(c1);
   const c2=el('div','corner r',t('menu.copyright')); s.appendChild(c2);
+  return s;
+}
+
+function screenMultiplayer(){
+  const s=el('div','screen dirt');
+  s.appendChild(el('div','sub',t('mp.title')));
+  const box=el('div','wrapc');
+
+  // Nick section
+  const nickBox=el('div','mp-section');
+  nickBox.innerHTML='<h4>'+t('mp.name')+'</h4>'+
+    '<div class="mp-row">'+
+    '<input type="text" id="mpMainNickInput" value="'+MP.nick+'" placeholder="'+t('mp.nameHint')+'" maxlength="16" style="text-transform:none;letter-spacing:0;text-align:left">'+
+    '</div>'+
+    '<button class="btn tiny" id="mpSaveNickBtn" style="width:100%;margin-top:4px">'+t('mp.saveNick')+'</button>'+
+    '<div class="mp-status" id="mpNickStatus" style="margin-top:4px"></div>';
+  box.appendChild(nickBox);
+
+  // Host section
+  const hostBox=el('div','mp-section');
+  hostBox.innerHTML='<h4>'+t('mp.host')+'</h4>'+
+    '<button class="btn" id="mpMainHostBtn" style="width:100%">'+t('mp.host')+'</button>'+
+    '<div class="mp-code" id="mpMainCode" style="display:none;margin-top:8px"></div>'+
+    '<div class="mp-players" id="mpMainPlayerList" style="display:none"></div>'+
+    '<div class="mp-status" id="mpHostStatus"></div>';
+  box.appendChild(hostBox);
+
+  // Join section
+  const joinBox=el('div','mp-section');
+  joinBox.innerHTML='<h4>'+t('mp.join')+'</h4>'+
+    '<div style="display:flex;gap:4px;width:100%">'+
+    '<input type="text" id="mpMainCodeInput" placeholder="'+t('mp.codeHint')+'" maxlength="6" style="flex:1;height:30px;background:#000;color:#e0e0e0;border:2px solid #666;padding:0 6px;font-family:inherit;font-size:13px;text-transform:uppercase;letter-spacing:2px;text-align:center">'+
+    '<button class="btn tiny" id="mpMainJoinBtn">'+t('mp.connect')+'</button>'+
+    '</div>'+
+    '<div class="mp-status off" id="mpJoinStatus"></div>';
+  box.appendChild(joinBox);
+
+  box.appendChild(btn(t('gui.back'), ()=> showScreen(screenTitle())));
+  s.appendChild(box);
+
+  setTimeout(()=>{
+    // Save Nick button
+    const snb=document.getElementById('mpSaveNickBtn');
+    if(snb) snb.onclick=()=>{
+      const inp=document.getElementById('mpMainNickInput');
+      const v=(inp?inp.value:'').trim();
+      const st=document.getElementById('mpNickStatus');
+      if(/^[a-zA-Z0-9]{3,16}$/.test(v)){
+        mpSaveNick(v);
+        if(st){ st.textContent='✓ '+t('mp.nickSaved')+' '+v; st.style.color='#8f8'; }
+      } else {
+        if(st){ st.textContent='✗ '+t('mp.nameInvalid'); st.style.color='#f88'; }
+      }
+    };
+
+    // Host button
+    const hb=document.getElementById('mpMainHostBtn');
+    if(hb) hb.onclick=()=>{
+      mpStartHost();
+      // Show code
+      setTimeout(()=>{
+        const codeEl=document.getElementById('mpMainCode');
+        const statusEl=document.getElementById('mpHostStatus');
+        if(codeEl && MP.code){
+          codeEl.style.display='block';
+          codeEl.textContent=MP.code;
+          codeEl.onclick=()=>{
+            navigator.clipboard.writeText(MP.code).then(()=>{
+              codeEl.style.borderColor='#7f7';
+              setTimeout(()=>{ codeEl.style.borderColor='#555'; },1000);
+            });
+          };
+        }
+        if(statusEl){ statusEl.textContent=t('mp.youAreHost')+' — '+t('mp.code')+': '+MP.code; statusEl.style.color='#8f8'; }
+        // Show player list updater
+        const plEl=document.getElementById('mpMainPlayerList');
+        if(plEl){
+          plEl.style.display='block';
+          const updatePL=()=>{
+            let html='<div><b>'+MP.nick+'</b> (You) <span class="host-badge">★ HOST</span></div>';
+            for(const [pid,p] of MP.peers) html+='<div>'+p.nick+'</div>';
+            plEl.innerHTML=html;
+            if(MP.enabled) requestAnimationFrame(updatePL);
+          };
+          updatePL();
+        }
+      },500);
+    };
+
+    // Join button
+    const jb=document.getElementById('mpMainJoinBtn');
+    const ci=document.getElementById('mpMainCodeInput');
+    if(jb&&ci) jb.onclick=()=>{
+      const code=ci.value.trim().toUpperCase();
+      if(code.length===6){
+        const st=document.getElementById('mpJoinStatus');
+        if(st){ st.textContent=t('mp.waitingForWorld'); st.style.color='#ff0'; }
+        mpJoinByCode(code);
+        setTimeout(()=>{
+          if(MP.connected){ if(st){ st.textContent=t('mp.connected'); st.style.color='#8f8'; } }
+          else { if(st){ st.textContent='Connection failed'; st.style.color='#f88'; } }
+        },7000);
+      }
+    };
+  },20);
   return s;
 }
 function screenBye(){
@@ -4406,6 +4513,7 @@ function screenPause(){
     mpDiv.innerHTML='<h4>'+t('mp.title')+'</h4>'+
       '<div class="wrapc" style="gap:6px">'+
       '<div class="mp-row"><input type="text" id="mpNickInput" value="'+MP.nick+'" placeholder="'+t('mp.nameHint')+'" maxlength="16" style="text-transform:none"></div>'+
+      '<button class="btn tiny" id="mpSaveNickBtn" style="width:100%">'+t('mp.saveNick')+'</button>'+
       '<button class="btn" id="mpHostBtn" style="width:100%">'+t('mp.host')+'</button>'+
       '<div style="display:flex;gap:4px;width:100%">'+
       '<input type="text" id="mpCodeInput" placeholder="'+t('mp.codeHint')+'" maxlength="6" style="flex:1;height:30px;background:#000;color:#e0e0e0;border:2px solid #666;padding:0 6px;font-family:inherit;font-size:13px;text-transform:uppercase;letter-spacing:2px;text-align:center">'+
@@ -4440,6 +4548,21 @@ function screenPause(){
   setTimeout(()=>{
     const ni=document.getElementById('mpNickInput');
     if(ni) ni.onchange=()=>{ const v=ni.value.trim(); if(/^[a-zA-Z0-9]{3,16}$/.test(v)) mpSaveNick(v); };
+    const snb=document.getElementById('mpSaveNickBtn');
+    if(snb) snb.onclick=()=>{
+      const inp=document.getElementById('mpNickInput');
+      const v=(inp?inp.value:'').trim();
+      if(/^[a-zA-Z0-9]{3,16}$/.test(v)){
+        mpSaveNick(v);
+        snb.textContent='✓ '+t('mp.nickSaved');
+        snb.style.color='#8f8';
+        setTimeout(()=>{ snb.textContent=t('mp.saveNick'); snb.style.color=''; },1500);
+      } else {
+        snb.textContent='✗ '+t('mp.nameInvalid');
+        snb.style.color='#f88';
+        setTimeout(()=>{ snb.textContent='Save Nick'; snb.style.color=''; },1500);
+      }
+    };
     const hb=document.getElementById('mpHostBtn');
     if(hb) hb.onclick=()=>{ 
       const ni=document.getElementById('mpNickInput');

@@ -4993,7 +4993,7 @@ function handleHostMessage(pid, data) {
 
 function handleClientMessage(data) {
   switch (data.t) {
-    case 'welcome': MP.hostNick = data.hostNick; initClientWorld(data); break;
+    case 'welcome': MP.hostNick = data.hostNick; applyWorldData(data); break;
     case 'worldMods': applyOnlyMods(data.mods); break;
     case 'playerPos': updateRemotePlayer(data.pid, data); break;
     case 'chat': chat('<' + data.nick + '> ' + data.msg); break;
@@ -5006,87 +5006,53 @@ function handleClientMessage(data) {
   }
 }
 
-function initClientWorld(data) {
+function applyWorldData(data){
+  if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
+  try {
   loading = true; menuMode = false; inGame = false;
-  chat('[MP] Preparing world...');
+  chat('[MP] Generating world...');
   world = new World(data.seed); world.time = data.time;
   const sp = data.spawn;
-  // Deep generation 9x9 around spawn to ensure physics
-  for (let dz = -4; dz <= 4; dz++) {
-    for (let dx = -4; dx <= 4; dx++) {
-      world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
-    }
-  }
+  const R = 6;
+  for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
   for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; ChunkMgr.mesh(world, ch); }
-  
-  // Find safe Y
-  let sy = sp.y;
-  for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) {
-     if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; }
-  }
-
-  player = new Player(world, sp.x, sy, sp.z);
-  player.mode = data.mode;
+  let sy = sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) { if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; } }
+  player = new Player(world, sp.x, sy, sp.z); player.mode = data.mode;
   if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
   if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
   hudEl.classList.remove('hidden');
-  
-  // WAIT for some meshes to load
-  setTimeout(() => {
-    loading = false; inGame = true; showScreen(null); requestPointer();
-    refreshBars(); refreshHotbar();
-    chat('[MP] Connected and Ready!');
-  }, 1000);
+  setTimeout(() => { loading = false; inGame = true; showScreen(null); requestPointer(); refreshBars(); refreshHotbar(); chat('[MP] Ready!'); }, 1000);
+  } catch(e) { console.error(e); }
 }
 
 function applyWorldData(data){
   if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
-  try{
+  try {
   chat('[MP] Generating world from seed '+data.seed+'...');
-  // Create world from seed
   world = new World(data.seed);
   world.time = data.time||6000;
   world.day = data.day||1;
   const sp=data.spawn||{x:0,y:64,z:0};
-
-  // FIRST: generate chunks so physics work
   const R=Math.min(S.renderDistance, 6);
   for(let dz=-R;dz<=R;dz++) for(let dx=-R;dx<=R;dx++){
     const cx=Math.floor(sp.x/CS)+dx;
     const cz=Math.floor(sp.z/CS)+dz;
     if(!world.getChunk(cx,cz)) world.generate(cx,cz);
   }
-
-  // Apply mods on top
   for(const k in data.mods){
-    const a=data.mods[k];
-    const [cx2,cz2]=k.split(',').map(Number);
+    const a=data.mods[k]; const [cx2,cz2]=k.split(',').map(Number);
     for(let i=0;i<a.length;i+=2){
       const idx=a[i], bid=a[i+1];
       const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
       world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
     }
   }
-
-  // Compute lighting
+  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; }
   for(const [,ch] of world.chunks){
-    world.computeLight(ch); ch.lit=true; ch.needMesh=true;
-  }
-
-  // Mesh all chunks (force)
-  for(const [,ch] of world.chunks){
-    const n0=world.getChunk(ch.cx-1,ch.cz), n1=world.getChunk(ch.cx+1,ch.cz),
-          n2=world.getChunk(ch.cx,ch.cz-1), n3=world.getChunk(ch.cx,ch.cz+1);
+    const n0=world.getChunk(ch.cx-1,ch.cz), n1=world.getChunk(ch.cx+1,ch.cz), n2=world.getChunk(ch.cx,ch.cz-1), n3=world.getChunk(ch.cx,ch.cz+1);
     if(n0&&n1&&n2&&n3) ChunkMgr.mesh(world,ch);
   }
-
-  // Find safe spawn Y
-  let sy=sp.y;
-  for(let y=Math.min(CH-1,Math.floor(sp.y)+10);y>=0;y--){
-    if(world.getBlockSafe(Math.floor(sp.x),y,Math.floor(sp.z))!==0){ sy=y+1; break; }
-  }
-
-  // NOW create player (chunks already exist for physics)
+  let sy=sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+10);y>=0;y--){ if(world.getBlockSafe(Math.floor(sp.x),y,Math.floor(sp.z))!==0){ sy=y+1; break; } }
   player = new Player(world, sp.x, sy, sp.z);
   player.mode=data.mode||'survival';
   player.spawn=[sp.x,sy,sp.z];
@@ -5099,6 +5065,7 @@ function applyWorldData(data){
   loading = false; inGame = true; showScreen(null); requestPointer();
   refreshBars(); refreshHotbar();
   setTimeout(() => { chat('[MP] World Loaded! Ready!'); }, 100);
+  } catch(e) { console.error(e); chat('[MP] Load Error'); }
 }
 
 function broadcast(data, excludePid){

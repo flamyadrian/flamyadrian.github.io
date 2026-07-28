@@ -5095,32 +5095,32 @@ function handleClientMessage(data){
 
 function sendWorldToClient(conn){
   if(!world||!player){ chat('[MP] Cannot send world: no world loaded'); return; }
+  // Send seed + spawn so client can generate its own world
+  const hostCX=Math.floor(player.x/CS);
+  const hostCZ=Math.floor(player.z/CS);
+  chat('[MP] Sending world info to client...');
+  // Step 1: send seed + spawn + mods only (small data)
   const mods={};
   for(const [k,m] of world.modified){
     const a=[]; for(const [i,v] of m) a.push(i,v);
     if(a.length) mods[k]=a;
   }
-  // Only send chunks within 10 chunk radius of host player
-  const hostCX=Math.floor(player.x/CS);
-  const hostCZ=Math.floor(player.z/CS);
-  const R=10;
-  const chunksData={};
-  let chunkCount=0;
-  for(const [k,ch] of world.chunks){
-    if(ch.generated && Math.abs(ch.cx-hostCX)<=R && Math.abs(ch.cz-hostCZ)<=R){
-      // Send compressed: only block IDs as a compact array
-      chunksData[k]={b:Array.from(ch.blocks), cx:ch.cx, cz:ch.cz};
-      chunkCount++;
-    }
-  }
-  chat('[MP] Sending world to client ('+chunkCount+' chunks)...');
   const msg={
     t:'worldData',
     seed:world.seed, time:Math.round(world.time), day:world.day,
-    mode:player.mode, mods, chunks:chunksData,
+    mode:player.mode, mods,
     spawn:{x:player.x, y:player.y, z:player.z}
   };
-  try{ conn.send(msg); chat('[MP] World sent!'); }catch(e){ chat('[MP] ERROR sending: '+e.message); }
+  try{ conn.send(msg); chat('[MP] World info sent! Client will generate terrain.'); }catch(e){ chat('[MP] ERROR: '+e.message); }
+}
+
+// Host also sends chunk data on demand when client requests it
+function sendChunkToClient(conn, cx, cz){
+  const ch=world.getChunk(cx,cz);
+  if(!ch||!ch.generated) return;
+  try{
+    conn.send({t:'chunkData', cx:cx, cz:cz, b:Array.from(ch.blocks)});
+  }catch(e){}
 }
 
 function requestWorldFromHost(conn){
@@ -5130,77 +5130,49 @@ function requestWorldFromHost(conn){
 function applyWorldData(data){
   if(!data||!data.seed){ chat('[MP] ERROR: invalid world data'); return; }
   try{
-  // If no world running, create one from seed
-  if(!world){
-    world = new World(data.seed);
-    world.time = data.time||6000;
-    world.day = data.day||1;
-    // Apply mods
-    for(const k in data.mods){
-      const a=data.mods[k]; const mp=new Map();
-      for(let i=0;i<a.length;i+=2) mp.set(a[i],a[i+1]);
-      world.modified.set(k,mp);
-    }
-    // Generate chunks from data
-    for(const k in data.chunks){
-      const cd=data.chunks[k];
-      const ch=new Chunk(cd.cx, cd.cz);
-      ch.blocks=new Uint8Array(cd.b||cd.blocks);
-      ch.generated=true;
-      // Rebuild heightmap
-      ch.minY=CH; ch.maxY=0;
-      for(let z=0;z<CS;z++) for(let x=0;x<CS;x++){
-        let top=0;
-        for(let y=CH-1;y>=0;y--){
-          const id=ch.blocks[idxOf(x,y,z)];
-          if(id){ if(y>ch.maxY)ch.maxY=y; if(y<ch.minY)ch.minY=y; }
-          if(id && isOpaque(id) && top===0) top=y;
-        }
-        ch.hmap[z*CS+x]=top;
-      }
-      world.chunks.set(k,ch);
-    }
-    // Apply modifications on top
-    for(const k in data.mods){
-      const a=data.mods[k];
-      const [cx2,cz2]=k.split(',').map(Number);
-      for(let i=0;i<a.length;i+=2){
-        const idx=a[i], bid=a[i+1];
-        const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
-        world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
-      }
-    }
-    // Compute lighting for all chunks
-    for(const [,ch] of world.chunks){
-      world.computeLight(ch);
-      ch.lit=true;
-    }
-    // Create player at spawn
-    const sp=data.spawn||{x:0,y:64,z:0};
-    player = new Player(world, sp.x, sp.y, sp.z);
-    player.mode=data.mode||'survival';
-    // Mesh all chunks
-    for(const [,ch] of world.chunks) ch.needMesh=true;
-    ChunkMgr.update(world, player.x, player.z, 9, false);
-    // Enter game state
-    loading=false; menuMode=false; inGame=true; paused=false;
-    showScreen(null);
-    requestPointer();
-    refreshBars(); refreshHotbar();
-    chat('[MP] World loaded! Spawn at '+Math.round(sp.x)+' '+Math.round(sp.y)+' '+Math.round(sp.z));
-  } else {
-    // World exists, just apply mods
-    for(const k in data.mods){
-      const a=data.mods[k];
-      for(let i=0;i<a.length;i+=2){
-        const [cx2,cz2]=k.split(',').map(Number);
-        const idx=a[i], bid=a[i+1];
-        const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
-        world.setBlock(cx2*CS+x, y, cz2*CS+z, bid);
-      }
+  chat('[MP] Generating world from seed '+data.seed+'...');
+  // Create world from seed (client generates its own terrain)
+  world = new World(data.seed);
+  world.time = data.time||6000;
+  world.day = data.day||1;
+  // Create player at spawn first so we can generate chunks around them
+  const sp=data.spawn||{x:0,y:64,z:0};
+  player = new Player(world, sp.x, sp.y, sp.z);
+  player.mode=data.mode||'survival';
+  // Generate chunks around spawn
+  const R=Math.min(S.renderDistance, 6);
+  for(let dz=-R;dz<=R;dz++) for(let dx=-R;dx<=R;dx++){
+    const cx=Math.floor(sp.x/CS)+dx;
+    const cz=Math.floor(sp.z/CS)+dz;
+    if(!world.getChunk(cx,cz)){
+      world.generate(cx,cz);
     }
   }
-  }catch(e){ chat('[MP] ERROR applying world: '+e.message); console.error('applyWorldData error:',e); }
+  // Apply mods on top of generated terrain
+  for(const k in data.mods){
+    const a=data.mods[k];
+    const [cx2,cz2]=k.split(',').map(Number);
+    for(let i=0;i<a.length;i+=2){
+      const idx=a[i], bid=a[i+1];
+      const y=(idx/(CS*CS))|0, r=idx-y*CS*CS, z=(r/CS)|0, x=r-z*CS;
+      world.setBlock(cx2*CS+x, y, cz2*CS+z, bid, false);
+    }
+  }
+  // Compute lighting for all chunks
+  for(const [,ch] of world.chunks){
+    world.computeLight(ch);
+    ch.lit=true;
+    ch.needMesh=true;
+  }
+  // Mesh chunks
+  ChunkMgr.update(world, player.x, player.z, R, false);
+  // Enter game state
+  loading=false; menuMode=false; inGame=true; paused=false;
+  showScreen(null);
+  requestPointer();
+  refreshBars(); refreshHotbar();
+  chat('[MP] World loaded! You are at '+Math.round(sp.x)+' '+Math.round(sp.y)+' '+Math.round(sp.z));
+  }catch(e){ chat('[MP] ERROR: '+e.message); console.error('applyWorldData:',e); }
 }
 
 function broadcast(data, excludePid){
@@ -5221,6 +5193,13 @@ function mpTick(dt){
       // Host broadcasts position to all clients with playerPos type
       for(const [pid,p] of MP.peers){
         try{ p.conn.send({t:'playerPos', pid:'host', pos:posData.pos, yaw:posData.yaw, nick:MP.nick}); }catch(e){}
+      }
+      // Also sync time periodically
+      MP._syncTimer=(MP._syncTimer||0)+1;
+      if(MP._syncTimer>=100){ // every 5 seconds
+        MP._syncTimer=0;
+        broadcast({t:'time', time:Math.round(world.time)});
+        broadcast({t:'day', day:world.day});
       }
     } else {
       // Client sends position to host

@@ -3000,7 +3000,7 @@ class Player extends Body {
           e.remove(); Sfx.pop(); refreshHotbar();
           if(MP.connected){
             const msg = {t:'pickupItem', eid: e.id};
-            if(MP.isHost) broadcast(msg); else { const host = MP.peers.get('host'); if(host) host.conn.send(msg); }
+            if(MP.isHost) broadcast(msg); else { const h = MP.peers.get('host'); if(h) h.conn.send(msg); }
           }
         }
         else e.stack=left;
@@ -3056,11 +3056,11 @@ function damageTool(p, amount){
 function dropStack(world,x,y,z,st,eid){
   if(st&&st.count>0) {
     const e = new ItemEntity(world,x,y,z,st);
-    if(eid) e.id = eid; else e.id = Math.random().toString(36).substr(2,9);
+    e.id = eid || Math.random().toString(36).substr(2,9);
     world.entities.push(e);
     if(MP.connected && !eid) {
        const msg = { t:'dropItem', x, y, z, id: st.id, count: st.count, eid: e.id };
-       if(MP.isHost) broadcast(msg); else { const host = MP.peers.get('host'); if(host) host.conn.send(msg); }
+       if(MP.isHost) broadcast(msg); else { const h = MP.peers.get('host'); if(h) h.conn.send(msg); }
     }
   }
 }
@@ -5008,25 +5008,35 @@ function handleClientMessage(data) {
 
 function initClientWorld(data) {
   loading = true; menuMode = false; inGame = false;
-  world = new World(data.seed);
-  world.time = data.time; world.day = data.day;
+  chat('[MP] Preparing world...');
+  world = new World(data.seed); world.time = data.time;
   const sp = data.spawn;
-  const R = 6;
-  for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
-  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; }
-  for(const [,ch] of world.chunks){
-    const n0=world.getChunk(ch.cx-1,ch.cz), n1=world.getChunk(ch.cx+1,ch.cz), n2=world.getChunk(ch.cx,ch.cz-1), n3=world.getChunk(ch.cx,ch.cz+1);
-    if(n0&&n1&&n2&&n3) ChunkMgr.mesh(world,ch);
+  // Deep generation 9x9 around spawn to ensure physics
+  for (let dz = -4; dz <= 4; dz++) {
+    for (let dx = -4; dx <= 4; dx++) {
+      world.generate(Math.floor(sp.x / 16) + dx, Math.floor(sp.z / 16) + dz);
+    }
   }
-  let sy=sp.y; for(let y=Math.min(CH-1,Math.floor(sp.y)+10);y>=0;y--){ if(world.getBlockSafe(Math.floor(sp.x),y,Math.floor(sp.z))!==0){ sy=y+1; break; } }
+  for(const [,ch] of world.chunks){ world.computeLight(ch); ch.lit=true; ch.needMesh=true; ChunkMgr.mesh(world, ch); }
+  
+  // Find safe Y
+  let sy = sp.y;
+  for(let y=Math.min(CH-1,Math.floor(sp.y)+20); y>0; y--) {
+     if(world.getBlockSafe(Math.floor(sp.x), y, Math.floor(sp.z)) !== 0) { sy = y + 1.8; break; }
+  }
+
   player = new Player(world, sp.x, sy, sp.z);
   player.mode = data.mode;
   if(player.mode==='creative'){ player.inv.set(0,stackOf(144,1)); player.inv.set(1,stackOf(159,1)); player.inv.set(2,stackOf(30,64)); player.inv.set(3,stackOf(5,64)); }
   if(!hudEl) buildHUD(); if(!ICONS.heartFull) buildIcons();
   hudEl.classList.remove('hidden');
-  loading = false; inGame = true; showScreen(null); requestPointer();
-  refreshBars(); refreshHotbar();
-  chat('[MP] Connected to ' + MP.hostNick);
+  
+  // WAIT for some meshes to load
+  setTimeout(() => {
+    loading = false; inGame = true; showScreen(null); requestPointer();
+    refreshBars(); refreshHotbar();
+    chat('[MP] Connected and Ready!');
+  }, 1000);
 }
 
 function applyWorldData(data){
@@ -5107,42 +5117,18 @@ function broadcast(data, excludePid){
   }
 }
 
-function mpTick(dt){
-  if(!MP.enabled||!MP.connected||!player) return;
-  MP._posTimer+=dt;
-  if(MP._posTimer>=0.05){ // 20 Hz position sync
-    MP._posTimer=0;
-    const posData={t:'pos', pos:{x:player.x,y:player.y,z:player.z}, yaw:player.yaw, nick:MP.nick};
-    if(MP.isHost){
-      // Host broadcasts position to all clients with playerPos type
-      for(const [pid,p] of MP.peers){
-        try{
-          p.conn.send({t:'playerPos', pid:'host', pos:posData.pos, yaw:posData.yaw, nick:MP.nick});
-        }catch(e){ console.error('[MP] Failed to send pos to',pid,e); }
-      }
-      // Also sync time periodically
-      MP._syncTimer=(MP._syncTimer||0)+1;
-      if(MP._syncTimer>=100){ // every 5 seconds
-        MP._syncTimer=0;
-        broadcast({t:'time', time:Math.round(world.time)});
-        broadcast({t:'day', day:world.day});
-      }
+function mpTick(dt) {
+  if (!MP.connected || !player) return;
+  MP._posTimer += dt;
+  if (MP._posTimer > 0.05) {
+    MP._posTimer = 0;
+    const pos = { x: player.x, y: player.y, z: player.z };
+    if (MP.isHost) {
+       broadcast({ t: 'playerPos', pid: 'host', pos, yaw: player.yaw, nick: MP.nick });
+       MP._syncTimer++; if(MP._syncTimer>100){ MP._syncTimer=0; broadcast({t:'time', time:world.time}); }
     } else {
-      // Client sends position to host
-      for(const [pid,p] of MP.peers){
-        try{ p.conn.send(posData); }catch(e){}
-      }
-    }
-  }
-  // cleanup dead remote players
-  MP._cleanupTimer+=dt;
-  if(MP._cleanupTimer>2){
-    MP._cleanupTimer=0;
-    for(const [pid,p] of MP.peers){
-      if(p.lastTick && performance.now()-p.lastTick>10000){
-        MP.peers.delete(pid);
-        removeRemotePlayer(pid);
-      }
+      const h = MP.peers.get('host');
+      if (h && h.conn && h.conn.open) h.conn.send({ t: 'pos', pos, yaw: player.yaw });
     }
   }
 }

@@ -102,7 +102,7 @@ footer{max-width:var(--max);margin:auto;padding:40px var(--pad);border-top:1px s
 :focus-visible{outline:2px solid var(--r1);outline-offset:3px}
 
 /* ─── BLUR TEXT ─── */
-.blur-word{display:flex;flex-wrap:wrap;gap:.08em .22em}
+.blur-word{display:flex;flex-wrap:wrap;row-gap:.08em}
 .blur-word span{display:inline-block;filter:blur(8px);opacity:0;transform:translateY(30px);transition:filter .65s var(--expo),opacity .65s var(--expo),transform .65s var(--expo);transition-delay:calc(var(--i)*80ms)}
 .in .blur-word span{filter:none;opacity:1;transform:none}
 
@@ -226,7 +226,7 @@ let W=0,H=0,dpr=1,last=performance.now(),
 scrollY=0,mx=innerWidth/2,my=innerHeight/2,
 px=0,py=0,heat=1,ewma=16,quality=low?.5:.7,slow=0,boot=last;
 
-function words(el){el.innerHTML=el.textContent.trim().split(/\s+/).map((w,i)=>'<span style="--i:'+i+'">'+w+'</span>').join('')}
+function words(el){const parts=el.textContent.trim().split(/\s+/);el.innerHTML=parts.map((w,i)=>'<span style="--i:'+i+'">'+w+(i<parts.length-1?'&nbsp;':'')+'</span>').join('')}
 document.querySelectorAll('[data-blur]').forEach(words);
 
 const reveal=new IntersectionObserver(es=>es.forEach(e=>{

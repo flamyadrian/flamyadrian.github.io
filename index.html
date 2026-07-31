@@ -102,8 +102,8 @@ footer{max-width:var(--max);margin:auto;padding:40px var(--pad);border-top:1px s
 :focus-visible{outline:2px solid var(--r1);outline-offset:3px}
 
 /* ─── BLUR TEXT ─── */
-.blur-word{display:flex;flex-wrap:wrap;row-gap:.08em}
-.blur-word span{display:inline-block;margin-right:.22em;filter:blur(8px);opacity:0;transform:translateY(30px);transition:filter .65s var(--expo),opacity .65s var(--expo),transform .65s var(--expo);transition-delay:calc(var(--i)*80ms)}
+.blur-word{display:flex;flex-wrap:wrap;gap:.08em .22em}
+.blur-word span{display:inline-block;filter:blur(8px);opacity:0;transform:translateY(30px);transition:filter .65s var(--expo),opacity .65s var(--expo),transform .65s var(--expo);transition-delay:calc(var(--i)*80ms)}
 .in .blur-word span{filter:none;opacity:1;transform:none}
 
 /* ─── RESPONSIVE ─── */
